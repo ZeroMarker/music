@@ -8,3 +8,6 @@
 
 [A Beginner's Guide to Music Theory](https://www.youtube.com/watch?v=n2z02J4fJwg)
 
+[【耶鲁大学】公开课 Introduction To Classical Music 古典音乐](https://www.bilibili.com/video/BV13P4y1x7jj/)
+
+
