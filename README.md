@@ -1,5 +1,9 @@
 # music
 
+[英皇乐理考级线上模拟考试系统 Piano Abrsm](https://www.pianoabrsm.com/)
+
+[Music Theory](https://www.musictheory.net/)
+
 [好和弦的《學鋼琴完全指南》！想學鋼琴嗎？看這部就好～](https://www.youtube.com/watch?v=esljyLyIj7Q)
 
 [Music Theory in 16 Minutes](https://www.youtube.com/watch?v=_eKTOMhpy2w)

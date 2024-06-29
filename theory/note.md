@@ -1,0 +1,4 @@
+whole note
+
+half note
+
