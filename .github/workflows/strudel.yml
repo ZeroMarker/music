@@ -68,19 +68,22 @@ jobs:
 
           await page.evaluateOnNewDocument(() => {
             const OrigAudioContext = window.AudioContext || window.webkitAudioContext;
+            let mediaDest = null;
 
             function PatchedAudioContext(...args) {
               const ctx = new OrigAudioContext(...args);
-              const realDest = ctx.destination;
-              const mediaDest = ctx.createMediaStreamDestination();
+              mediaDest = ctx.createMediaStreamDestination();
 
-              const origConnect = realDest.connect.bind(realDest);
-              realDest.connect = function(node) {
-                if (node === mediaDest) return realDest;
-                return origConnect(node);
+              const origConnect = AudioNode.prototype.connect;
+              AudioNode.prototype.connect = function(dest, ...args) {
+                const result = origConnect.call(this, dest, ...args);
+                if (dest === ctx.destination) {
+                  origConnect.call(this, mediaDest);
+                }
+                return result;
               };
 
-              window.__mediaDest = mediaDest;
+              window.__getMediaDest = () => mediaDest;
               return ctx;
             }
             PatchedAudioContext.prototype = OrigAudioContext.prototype;
@@ -102,12 +105,13 @@ jobs:
 
               await new Promise(r => setTimeout(r, 3000));
 
-              if (!window.__mediaDest) {
+              const mediaDest = window.__getMediaDest ? window.__getMediaDest() : null;
+              if (!mediaDest) {
                 resolve(null);
                 return;
               }
 
-              const recorder = new MediaRecorder(window.__mediaDest.stream);
+              const recorder = new MediaRecorder(mediaDest.stream);
               const chunks = [];
 
               recorder.ondataavailable = (e) => chunks.push(e.data);
