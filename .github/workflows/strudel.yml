@@ -55,7 +55,9 @@ jobs:
               '--autoplay-policy=no-user-gesture-required',
               '--disable-web-security',
               '--use-fake-device-for-media-stream',
-              '--use-fake-ui-for-media-stream'
+              '--use-fake-ui-for-media-stream',
+              '--no-sandbox',
+              '--disable-setuid-sandbox'
             ]
           });
 
