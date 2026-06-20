@@ -43,6 +43,7 @@ jobs:
         run: |
           timeout 10m sclang "$GITHUB_WORKSPACE/canon/export_wav.scd"
           test -s canon_in_d.wav
+        working-directory: ${{ github.workspace }}/canon
 
       - name: Convert WAV to MP3
         run: |
