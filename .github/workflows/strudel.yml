@@ -36,9 +36,9 @@ jobs:
           import path from 'path';
 
           const server = http.createServer(async (req, res) => {
-            const file = req.url === '/' ? '/canon/strudel.html' : req.url;
+            const file = req.url === '/' ? '/strudel.html' : req.url;
             try {
-              const content = await readFile(path.join('.', file));
+              const content = await readFile(path.join('./canon', file));
               res.writeHead(200);
               res.end(content);
             } catch {
