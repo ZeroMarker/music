@@ -1,0 +1,155 @@
+name: Render Strudel Canon
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  render:
+    name: Export MP3
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: |
+          npm init -y
+          npm install puppeteer
+
+      - name: Create render script
+        run: |
+          cat > render.mjs << 'SCRIPT'
+          import puppeteer from 'puppeteer';
+          import { writeFileSync } from 'fs';
+          import http from 'http';
+          import { readFile } from 'fs/promises';
+          import path from 'path';
+
+          const server = http.createServer(async (req, res) => {
+            const file = req.url === '/' ? '/canon/strudel.html' : req.url;
+            try {
+              const content = await readFile(path.join('.', file));
+              res.writeHead(200);
+              res.end(content);
+            } catch {
+              res.writeHead(404);
+              res.end();
+            }
+          });
+
+          server.listen(8080);
+
+          const browser = await puppeteer.launch({
+            headless: 'new',
+            args: [
+              '--autoplay-policy=no-user-gesture-required',
+              '--disable-web-security',
+              '--use-fake-device-for-media-stream',
+              '--use-fake-ui-for-media-stream'
+            ]
+          });
+
+          const page = await browser.newPage();
+
+          page.on('console', msg => console.log('PAGE:', msg.text()));
+          page.on('pageerror', err => console.error('PAGE ERROR:', err));
+
+          await page.evaluateOnNewDocument(() => {
+            window.__audioContexts = [];
+            const OrigAudioContext = window.AudioContext || window.webkitAudioContext;
+
+            function PatchedAudioContext(...args) {
+              const ctx = new OrigAudioContext(...args);
+              window.__audioContexts.push(ctx);
+              return ctx;
+            }
+            PatchedAudioContext.prototype = OrigAudioContext.prototype;
+
+            window.AudioContext = PatchedAudioContext;
+            window.webkitAudioContext = PatchedAudioContext;
+          });
+
+          await page.goto('http://localhost:8080/strudel.html', { waitUntil: 'networkidle2' });
+
+          await page.waitForSelector('#btnPlay:not([disabled])');
+
+          const duration = 120;
+
+          const audioData = await page.evaluate(async (duration) => {
+            return new Promise(async (resolve) => {
+              const btn = document.getElementById('btnPlay');
+              btn.click();
+
+              await new Promise(r => setTimeout(r, 2000));
+
+              if (window.__audioContexts.length === 0) {
+                resolve(null);
+                return;
+              }
+
+              const ctx = window.__audioContexts[0];
+              const dest = ctx.createMediaStreamDestination();
+              const source = ctx.createMediaStreamSource(dest.stream);
+
+              ctx.destination.connect(dest);
+
+              const recorder = new MediaRecorder(dest.stream);
+              const chunks = [];
+
+              recorder.ondataavailable = (e) => chunks.push(e.data);
+              recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'audio/webm' });
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onload = () => resolve(reader.result);
+              };
+
+              recorder.start();
+
+              await new Promise(r => setTimeout(r, duration * 1000));
+
+              recorder.stop();
+            });
+          }, duration);
+
+          if (audioData) {
+            const base64 = audioData.split(',')[1];
+            writeFileSync('canon_strudel.webm', Buffer.from(base64, 'base64'));
+            console.log('Audio captured successfully');
+          } else {
+            console.log('No audio context found');
+            process.exit(1);
+          }
+
+          await browser.close();
+          server.close();
+          SCRIPT
+
+      - name: Render audio
+        run: node render.mjs
+
+      - name: Convert to MP3
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          ffmpeg -y -i canon_strudel.webm -codec:a libmp3lame -q:a 2 canon_strudel.mp3
+          test -s canon_strudel.mp3
+
+      - name: Show metadata
+        run: ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 canon_strudel.mp3
+
+      - name: Upload MP3
+        uses: actions/upload-artifact@v4
+        with:
+          name: canon-strudel-mp3
+          path: canon_strudel.mp3

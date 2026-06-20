@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canon in D — Strudel</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #1a1a2e; color: #e0e0e0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 2rem; }
+h1 { font-size: 1.6rem; margin-bottom: 0.5rem; color: #c9a0dc; }
+p.sub { font-size: 0.85rem; color: #888; margin-bottom: 1.5rem; }
+#controls { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+button { background: #16213e; color: #e0e0e0; border: 1px solid #c9a0dc; padding: 0.6rem 1.8rem; font-family: inherit; font-size: 1rem; cursor: pointer; border-radius: 4px; transition: background 0.2s; }
+button:hover { background: #0f3460; }
+button.active { background: #c9a0dc; color: #1a1a2e; }
+#log { width: 100%; max-width: 720px; background: #0f0f1e; border: 1px solid #333; border-radius: 4px; padding: 1rem; font-size: 0.8rem; height: 220px; overflow-y: auto; white-space: pre-wrap; color: #aaa; }
+</style>
+</head>
+<body>
+
+<h1>Canon in D</h1>
+<p class="sub">Strudel — Pachelbel</p>
+
+<div id="controls">
+  <button id="btnPlay" disabled>▶ Play</button>
+  <button id="btnStop" disabled>■ Stop</button>
+</div>
+<div id="log">Loading...</div>
+
+<script src="https://unpkg.com/@strudel/web@1.0.3"></script>
+<script>
+const logEl = document.getElementById('log');
+const log = (msg) => {
+  logEl.textContent += '\n' + msg;
+  logEl.scrollTop = logEl.scrollHeight;
+};
+
+const canonCode = `
+const pianoL = note("<d3 a2 b2 f#2 g2 d3 g2 a2>*2")
+  .sound('triangle')
+  .gain(0.2)
+  .lpf(800)
+  .decay(0.15).sustain(0).release(0.1)
+  .room(0.2)
+
+const pianoR = note(\`<
+  [d4 a4 f#5 a4 f#4 a4 d5 a4]
+  [a3 e4 c#5 e4 c#4 e4 a4 e4]
+  [b3 f#4 d5 f#4 d4 f#4 b4 f#4]
+  [f#3 c#4 a4 c#4 a3 c#4 f#4 c#4]
+  [g3 d4 b4 d4 b3 d4 g4 d4]
+  [d4 a4 f#5 a4 f#4 a4 d5 a4]
+  [g3 d4 b4 d4 b3 d4 g4 d4]
+  [a3 e4 c#5 e4 c#4 e4 a4 e4]
+>*2\`)
+  .sound('triangle')
+  .gain(0.1)
+  .lpf(2000)
+  .decay(0.12).sustain(0).release(0.08)
+  .room(0.15)
+
+const violin = note(\`<
+  [f#4 e4 f#4 d4 c#4 e4 d4 c#4 d4 e4 f#4 d4 c#4 d4 e4 c#4]
+  [d4 e4 f#4 a4 g4 f#4 e4 d4 e4 f#4 g4 b4 a4 g4 f#4 e4]
+  [f#4 g4 a4 b4 c#5 a4 b4 g4 f#4 g4 a4 d4 c#4 e4 d4 c#4]
+  [a3 d4 e4 f#4 g4 e4 f#4 d4 e4 f#4 g4 b4 c#5 g4 b4 f#4]
+>*2\`)
+  .sound('sawtooth')
+  .gain(0.05)
+  .lpf(1800)
+  .attack(0.08).decay(0.5).sustain(0.4).release(0.4)
+  .vib(5).vibmod(0.1)
+  .room(0.35)
+
+stack(pianoL, pianoR, violin)
+`;
+
+let playing = false;
+
+window.addEventListener('load', async () => {
+  await initStrudel();
+  try { setcpm(84/4); } catch(e) {}
+
+  const btnPlay = document.getElementById('btnPlay');
+  const btnStop = document.getElementById('btnStop');
+  btnPlay.disabled = false;
+  btnStop.disabled = false;
+  log('Ready.');
+
+  btnPlay.addEventListener('click', async () => {
+    if (!playing) {
+      log('Playing...');
+      await evaluate(canonCode);
+      playing = true;
+      btnPlay.textContent = '⏸ Pause';
+      btnPlay.classList.add('active');
+    } else {
+      hush();
+      playing = false;
+      btnPlay.textContent = '▶ Play';
+      btnPlay.classList.remove('active');
+      log('Paused.');
+    }
+  });
+
+  btnStop.addEventListener('click', () => {
+    hush();
+    playing = false;
+    btnPlay.textContent = '▶ Play';
+    btnPlay.classList.remove('active');
+    log('Stopped.');
+  });
+});
+</script>
+
+</body>
+</html>

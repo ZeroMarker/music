@@ -1,0 +1,63 @@
+name: Render Canon
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  render:
+    name: Export WAV and MP3
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      QT_QPA_PLATFORM: offscreen
+      CANON_PROJECT_DIR: ${{ github.workspace }}
+      JACK_NO_AUDIO_RESERVATION: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install SuperCollider and ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends supercollider-language supercollider-server ffmpeg alsa-utils
+
+      - name: Configure headless audio
+        run: |
+          mkdir -p "$HOME/.config/SuperCollider"
+          cat > "$HOME/.config/SuperCollider/startup.scd" <<'EOF'
+          Server.default.options.device = "SuperCollider";
+          Server.default.options.numInputBusChannels = 0;
+          Server.default.options.numOutputBusChannels = 2;
+          EOF
+          jackd -d dummy -r 48000 -p 1024 > jackd.log 2>&1 &
+          echo "$!" > jackd.pid
+          sleep 3
+          cat jackd.log
+          jack_lsp
+
+      - name: Render WAV
+        run: |
+          timeout 10m sclang "$GITHUB_WORKSPACE/canon/export_wav.scd"
+          test -s canon_in_d.wav
+
+      - name: Convert WAV to MP3
+        run: |
+          ffmpeg -y -i canon_in_d.wav -codec:a libmp3lame -q:a 2 canon_in_d.mp3
+          test -s canon_in_d.mp3
+
+      - name: Show audio metadata
+        run: |
+          ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 canon_in_d.wav
+          ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 canon_in_d.mp3
+
+      - name: Upload rendered audio
+        uses: actions/upload-artifact@v4
+        with:
+          name: canon-in-d-audio
+          path: |
+            canon_in_d.wav
+            canon_in_d.mp3
