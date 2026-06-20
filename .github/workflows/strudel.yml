@@ -67,12 +67,20 @@ jobs:
           page.on('pageerror', err => console.error('PAGE ERROR:', err));
 
           await page.evaluateOnNewDocument(() => {
-            window.__audioContexts = [];
             const OrigAudioContext = window.AudioContext || window.webkitAudioContext;
 
             function PatchedAudioContext(...args) {
               const ctx = new OrigAudioContext(...args);
-              window.__audioContexts.push(ctx);
+              const realDest = ctx.destination;
+              const mediaDest = ctx.createMediaStreamDestination();
+
+              const origConnect = realDest.connect.bind(realDest);
+              realDest.connect = function(node) {
+                if (node === mediaDest) return realDest;
+                return origConnect(node);
+              };
+
+              window.__mediaDest = mediaDest;
               return ctx;
             }
             PatchedAudioContext.prototype = OrigAudioContext.prototype;
@@ -92,20 +100,14 @@ jobs:
               const btn = document.getElementById('btnPlay');
               btn.click();
 
-              await new Promise(r => setTimeout(r, 2000));
+              await new Promise(r => setTimeout(r, 3000));
 
-              if (window.__audioContexts.length === 0) {
+              if (!window.__mediaDest) {
                 resolve(null);
                 return;
               }
 
-              const ctx = window.__audioContexts[0];
-              const dest = ctx.createMediaStreamDestination();
-              const source = ctx.createMediaStreamSource(dest.stream);
-
-              ctx.destination.connect(dest);
-
-              const recorder = new MediaRecorder(dest.stream);
+              const recorder = new MediaRecorder(window.__mediaDest.stream);
               const chunks = [];
 
               recorder.ondataavailable = (e) => chunks.push(e.data);
