@@ -49,6 +49,7 @@ jobs:
         run: |
           ffmpeg -y -i canon_in_d.wav -codec:a libmp3lame -q:a 2 canon_in_d.mp3
           test -s canon_in_d.mp3
+        working-directory: ${{ github.workspace }}/canon
 
       - name: Show audio metadata
         run: |
