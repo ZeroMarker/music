@@ -76,6 +76,7 @@ stack(pianoL, pianoR, violin)
 `;
 
 let playing = false;
+window.playCanon = () => evaluate(canonCode);
 
 window.addEventListener('load', async () => {
   await initStrudel();
@@ -90,7 +91,7 @@ window.addEventListener('load', async () => {
   btnPlay.addEventListener('click', async () => {
     if (!playing) {
       log('Playing...');
-      await evaluate(canonCode);
+      await window.playCanon();
       playing = true;
       btnPlay.textContent = '⏸ Pause';
       btnPlay.classList.add('active');

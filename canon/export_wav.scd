@@ -13,5 +13,6 @@ var envDuration = "CANON_RECORD_DURATION".getenv;
 
 ~canonRecordPath = envPath ? (projectDir +/+ "canon_in_d.wav");
 ~canonRecordDuration = if (envDuration.notNil) { envDuration.asFloat } { 137.2 };
+thisThread.randSeed = 20260731;
 (projectDir +/+ "main.scd").load;
 )

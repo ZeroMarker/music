@@ -6,158 +6,53 @@ on:
       - "v*"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: render-strudel-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   render:
     name: Export MP3
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      CANON_RECORD_DURATION: "120"
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
+          cache: npm
 
       - name: Install dependencies
-        run: |
-          npm init -y
-          npm install puppeteer
-
-      - name: Create render script
-        run: |
-          cat > render.mjs << 'SCRIPT'
-          import puppeteer from 'puppeteer';
-          import { writeFileSync } from 'fs';
-          import http from 'http';
-          import { readFile } from 'fs/promises';
-          import path from 'path';
-
-          const server = http.createServer(async (req, res) => {
-            const file = req.url === '/' ? '/strudel.html' : req.url;
-            try {
-              const content = await readFile(path.join('./canon', file));
-              res.writeHead(200);
-              res.end(content);
-            } catch {
-              res.writeHead(404);
-              res.end();
-            }
-          });
-
-          server.listen(8080);
-
-          const browser = await puppeteer.launch({
-            headless: 'new',
-            args: [
-              '--autoplay-policy=no-user-gesture-required',
-              '--disable-web-security',
-              '--use-fake-device-for-media-stream',
-              '--use-fake-ui-for-media-stream',
-              '--no-sandbox',
-              '--disable-setuid-sandbox'
-            ]
-          });
-
-          const page = await browser.newPage();
-
-          page.on('console', msg => console.log('PAGE:', msg.text()));
-          page.on('pageerror', err => console.error('PAGE ERROR:', err));
-
-          await page.evaluateOnNewDocument(() => {
-            const OrigAudioContext = window.AudioContext || window.webkitAudioContext;
-            let mediaDest = null;
-
-            function PatchedAudioContext(...args) {
-              const ctx = new OrigAudioContext(...args);
-              mediaDest = ctx.createMediaStreamDestination();
-
-              const origConnect = AudioNode.prototype.connect;
-              AudioNode.prototype.connect = function(dest, ...args) {
-                const result = origConnect.call(this, dest, ...args);
-                if (dest === ctx.destination) {
-                  origConnect.call(this, mediaDest);
-                }
-                return result;
-              };
-
-              window.__getMediaDest = () => mediaDest;
-              return ctx;
-            }
-            PatchedAudioContext.prototype = OrigAudioContext.prototype;
-
-            window.AudioContext = PatchedAudioContext;
-            window.webkitAudioContext = PatchedAudioContext;
-          });
-
-          await page.goto('http://localhost:8080/strudel.html', { waitUntil: 'networkidle2' });
-
-          await page.waitForSelector('#btnPlay:not([disabled])');
-
-          const duration = 120;
-
-          const audioData = await page.evaluate(async (duration) => {
-            return new Promise(async (resolve) => {
-              const btn = document.getElementById('btnPlay');
-              btn.click();
-
-              await new Promise(r => setTimeout(r, 3000));
-
-              const mediaDest = window.__getMediaDest ? window.__getMediaDest() : null;
-              if (!mediaDest) {
-                resolve(null);
-                return;
-              }
-
-              const recorder = new MediaRecorder(mediaDest.stream);
-              const chunks = [];
-
-              recorder.ondataavailable = (e) => chunks.push(e.data);
-              recorder.onstop = () => {
-                const blob = new Blob(chunks, { type: 'audio/webm' });
-                const reader = new FileReader();
-                reader.readAsDataURL(blob);
-                reader.onload = () => resolve(reader.result);
-              };
-
-              recorder.start();
-
-              await new Promise(r => setTimeout(r, duration * 1000));
-
-              recorder.stop();
-            });
-          }, duration);
-
-          if (audioData) {
-            const base64 = audioData.split(',')[1];
-            writeFileSync('canon_strudel.webm', Buffer.from(base64, 'base64'));
-            console.log('Audio captured successfully');
-          } else {
-            console.log('No audio context found');
-            process.exit(1);
-          }
-
-          await browser.close();
-          server.close();
-          SCRIPT
+        run: npm ci
 
       - name: Render audio
-        run: node render.mjs
+        run: npm run render:strudel
 
       - name: Convert to MP3
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg
-          ffmpeg -y -i canon_strudel.webm -codec:a libmp3lame -q:a 2 canon_strudel.mp3
-          test -s canon_strudel.mp3
+          sudo apt-get install -y --no-install-recommends ffmpeg
+          ffmpeg -y -i canon/canon_strudel.webm -codec:a libmp3lame -q:a 2 canon/canon_strudel.mp3
+          test -s canon/canon_strudel.mp3
 
       - name: Show metadata
-        run: ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 canon_strudel.mp3
+        run: ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 canon/canon_strudel.mp3
 
       - name: Upload MP3
         uses: actions/upload-artifact@v4
         with:
           name: canon-strudel-mp3
-          path: canon_strudel.mp3
+          path: canon/canon_strudel.mp3
+          if-no-files-found: error
+          retention-days: 14

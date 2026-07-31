@@ -6,6 +6,13 @@ on:
       - "v*"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: render-supercollider-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   render:
     name: Export WAV and MP3
@@ -19,6 +26,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install SuperCollider and ffmpeg
         run: |
@@ -35,9 +44,15 @@ jobs:
           EOF
           jackd -d dummy -r 48000 -p 1024 > jackd.log 2>&1 &
           echo "$!" > jackd.pid
-          sleep 3
+          for attempt in {1..10}; do
+            if jack_lsp >/dev/null 2>&1; then
+              jack_lsp
+              exit 0
+            fi
+            sleep 1
+          done
           cat jackd.log
-          jack_lsp
+          exit 1
 
       - name: Render WAV
         run: |
@@ -55,11 +70,19 @@ jobs:
         run: |
           ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 canon_in_d.wav
           ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 canon_in_d.mp3
+        working-directory: ${{ github.workspace }}/canon
+
+      - name: Show JACK log on failure
+        if: failure()
+        run: cat jackd.log
+        working-directory: ${{ github.workspace }}
 
       - name: Upload rendered audio
         uses: actions/upload-artifact@v4
         with:
           name: canon-in-d-audio
           path: |
-            canon_in_d.wav
-            canon_in_d.mp3
+            canon/canon_in_d.wav
+            canon/canon_in_d.mp3
+          if-no-files-found: error
+          retention-days: 14

@@ -54,6 +54,8 @@ version tag such as `v1.0.0`.
 ### Strudel Render
 
 The workflow in `../.github/workflows/strudel.yml` renders `strudel.html`
-to MP3 using headless Chrome and Puppeteer.
+to MP3 using headless Chrome and Puppeteer. The reusable capture script is
+`render_strudel.mjs`; set `CANON_RECORD_DURATION` or `CANON_RECORD_PATH` to
+override its 120-second default recording.
 
 Run it from the Actions tab with **Render Strudel Canon** > **Run workflow**.
