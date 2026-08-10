@@ -1,13 +1,18 @@
-name: Render Strudel Canon
+name: Render Strudel
 
 on:
   push:
     tags:
-      - "v*"
+      - "*-*" # e.g. canon-1.0.0, my-project-2.1.0
   workflow_dispatch:
+    inputs:
+      project:
+        description: "Project directory to render (e.g. canon)"
+        required: true
+        default: canon
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: render-strudel-${{ github.ref }}
@@ -19,13 +24,37 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      CANON_RECORD_DURATION: "120"
+      CANON_RECORD_DURATION: "137.2"
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      - name: Resolve project name
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            PROJ="${{ inputs.project }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+            PROJ="${TAG%-*}"
+            VERSION="${TAG##*-}"
+            if [[ ! "$VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+              echo "error: invalid version '$VERSION' in tag '$TAG' (expected e.g. 1.0.0, no dashes)" >&2
+              exit 1
+            fi
+          fi
+          if [[ ! "$PROJ" =~ ^[A-Za-z0-9_]+$ ]]; then
+            echo "error: invalid project name '$PROJ' (use letters, digits, underscore only)" >&2
+            exit 1
+          fi
+          if [[ ! -d "$PROJ" ]]; then
+            echo "error: unknown project '$PROJ'" >&2
+            exit 1
+          fi
+          echo "PROJ=$PROJ" >> "$GITHUB_ENV"
+          echo "Rendering project: $PROJ"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -37,22 +66,36 @@ jobs:
         run: npm ci
 
       - name: Render audio
+        env:
+          CANON_PROJECT_DIR: ${{ github.workspace }}/${{ env.PROJ }}
+          CANON_RECORD_PATH: ${{ github.workspace }}/${{ env.PROJ }}/${{ env.PROJ }}_strudel.webm
         run: npm run render:strudel
 
       - name: Convert to MP3
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ffmpeg
-          ffmpeg -y -i canon/canon_strudel.webm -codec:a libmp3lame -q:a 2 canon/canon_strudel.mp3
-          test -s canon/canon_strudel.mp3
+          ffmpeg -y -i ${{ env.PROJ }}_strudel.webm -codec:a libmp3lame -q:a 2 ${{ env.PROJ }}_strudel.mp3
+          test -s ${{ env.PROJ }}_strudel.mp3
+        working-directory: ${{ github.workspace }}/${{ env.PROJ }}
 
       - name: Show metadata
-        run: ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 canon/canon_strudel.mp3
+        run: ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 ${{ env.PROJ }}_strudel.mp3
+        working-directory: ${{ github.workspace }}/${{ env.PROJ }}
 
       - name: Upload MP3
         uses: actions/upload-artifact@v4
         with:
-          name: canon-strudel-mp3
-          path: canon/canon_strudel.mp3
+          name: ${{ env.PROJ }}-strudel-mp3
+          path: ${{ env.PROJ }}/${{ env.PROJ }}_strudel.mp3
           if-no-files-found: error
           retention-days: 14
+
+      - name: Attach MP3 to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          gh release create "$TAG" --generate-notes || true
+          gh release upload "$TAG" "${{ env.PROJ }}"/${{ env.PROJ }}_strudel.mp3 --clobber

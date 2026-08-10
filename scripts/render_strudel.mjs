@@ -1,15 +1,20 @@
 import { createServer } from 'node:http';
 import { readFile, writeFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import process from 'node:process';
 import puppeteer from 'puppeteer';
 
-const projectDir = path.dirname(fileURLToPath(import.meta.url));
-const durationSeconds = Number(process.env.CANON_RECORD_DURATION ?? 120);
+// Shared renderer: reads <project>/strudel.html, records to CANON_RECORD_PATH.
+//   CANON_PROJECT_DIR     project directory (default: current working directory)
+//   CANON_RECORD_DURATION recording length in seconds (default: 137.2)
+//   CANON_RECORD_PATH     output WebM path (default: <project>/strudel.webm)
+const projectDir = process.env.CANON_PROJECT_DIR
+  ? path.resolve(process.env.CANON_PROJECT_DIR)
+  : process.cwd();
+const durationSeconds = Number(process.env.CANON_RECORD_DURATION ?? 137.2);
 const outputPath = process.env.CANON_RECORD_PATH
   ? path.resolve(process.env.CANON_RECORD_PATH)
-  : path.join(projectDir, 'canon_strudel.webm');
+  : path.join(projectDir, 'strudel.webm');
 
 if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
   throw new Error('CANON_RECORD_DURATION must be a positive number');
@@ -45,6 +50,7 @@ try {
       '--autoplay-policy=no-user-gesture-required',
       '--no-sandbox',
       '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
     ],
   });
 

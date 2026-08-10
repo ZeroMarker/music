@@ -1,8 +1,13 @@
 /*
 Command-line WAV export.
 
-Run:
-"C:\Program Files\SuperCollider-3.14.1\sclang.exe" "D:\canon\export_wav.scd"
+Run (sclang must be on PATH):
+    sclang export_wav.scd
+
+Optional environment variables:
+    CANON_PROJECT_DIR      project directory (defaults to this file's directory)
+    CANON_RECORD_PATH      output WAV path (default: canon_in_d.wav in project dir)
+    CANON_RECORD_DURATION  recording length in seconds (default: 137.2)
 */
 
 (

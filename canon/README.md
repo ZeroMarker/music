@@ -24,38 +24,47 @@ To stop playback, evaluate:
 ~stopCanon.()
 ```
 
-To export a WAV from the command line:
+To export a WAV from the command line (sclang must be on PATH):
 
-```powershell
-& "C:\Program Files\SuperCollider-3.14.1\sclang.exe" "D:\canon\export_wav.scd"
+```bash
+sclang export_wav.scd
 ```
 
 The rendered file is written to `canon_in_d.wav`.
 
 For a short test render:
 
-```powershell
-$env:CANON_RECORD_DURATION = "5"
-$env:CANON_RECORD_PATH = "D:/canon/canon_test.wav"
-& "C:\Program Files\SuperCollider-3.14.1\sclang.exe" "D:\canon\export_wav.scd"
+```bash
+CANON_RECORD_DURATION=5 CANON_RECORD_PATH=canon_test.wav sclang export_wav.scd
 ```
 
 ## GitHub Actions
 
+Both workflows resolve the project name from the pushed tag
+(`<project>-<version>`, e.g. `canon-1.0.0`) or from the `project` input when
+run manually. Project names may only contain letters, digits and underscores;
+versions must be plain dotted numbers (no `-beta` suffixes). Artifacts and
+release assets are prefixed with the project name, so multiple projects can be
+published from the same repository.
+
 ### SuperCollider Render
 
-The workflow in `../.github/workflows/render.yml` renders `canon_in_d.wav`, converts
-it to `canon_in_d.mp3`, and uploads both files as the `canon-in-d-audio`
-artifact.
+The workflow in `../.github/workflows/render.yml` renders `canon.wav` from
+the arrangement, converts it to `canon.mp3`, and uploads both files as the
+`canon-audio` artifact. On tag pushes it also attaches both files to the
+GitHub Release.
 
-Run it from the Actions tab with **Render Canon** > **Run workflow**, or push a
-version tag such as `v1.0.0`.
+Run it from the Actions tab with **Render SuperCollider** > **Run workflow**
+(project: `canon`), or push a version tag such as `canon-1.0.0`.
 
 ### Strudel Render
 
 The workflow in `../.github/workflows/strudel.yml` renders `strudel.html`
-to MP3 using headless Chrome and Puppeteer. The reusable capture script is
-`render_strudel.mjs`; set `CANON_RECORD_DURATION` or `CANON_RECORD_PATH` to
-override its 120-second default recording.
+to MP3 using headless Chrome and Puppeteer. The shared capture script is
+`../scripts/render_strudel.mjs`; `CANON_PROJECT_DIR`, `CANON_RECORD_DURATION`
+and `CANON_RECORD_PATH` control the project directory, recording length
+(137.2 s default) and output path. On tag pushes the MP3 is also attached to
+the GitHub Release.
 
-Run it from the Actions tab with **Render Strudel Canon** > **Run workflow**.
+Run it from the Actions tab with **Render Strudel** > **Run workflow**
+(project: `canon`), or push a version tag such as `canon-1.0.0`.

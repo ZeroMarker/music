@@ -1,13 +1,18 @@
-name: Render Canon
+name: Render SuperCollider
 
 on:
   push:
     tags:
-      - "v*"
+      - "*-*" # e.g. canon-1.0.0, my-project-2.1.0
   workflow_dispatch:
+    inputs:
+      project:
+        description: "Project directory to render (e.g. canon)"
+        required: true
+        default: canon
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: render-supercollider-${{ github.ref }}
@@ -20,7 +25,6 @@ jobs:
     timeout-minutes: 15
     env:
       QT_QPA_PLATFORM: offscreen
-      CANON_PROJECT_DIR: ${{ github.workspace }}/canon
       JACK_NO_AUDIO_RESERVATION: "1"
 
     steps:
@@ -28,6 +32,30 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
+
+      - name: Resolve project name
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            PROJ="${{ inputs.project }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+            PROJ="${TAG%-*}"
+            VERSION="${TAG##*-}"
+            if [[ ! "$VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+              echo "error: invalid version '$VERSION' in tag '$TAG' (expected e.g. 1.0.0, no dashes)" >&2
+              exit 1
+            fi
+          fi
+          if [[ ! "$PROJ" =~ ^[A-Za-z0-9_]+$ ]]; then
+            echo "error: invalid project name '$PROJ' (use letters, digits, underscore only)" >&2
+            exit 1
+          fi
+          if [[ ! -d "$PROJ" ]]; then
+            echo "error: unknown project '$PROJ'" >&2
+            exit 1
+          fi
+          echo "PROJ=$PROJ" >> "$GITHUB_ENV"
+          echo "Rendering project: $PROJ"
 
       - name: Install SuperCollider and ffmpeg
         run: |
@@ -56,21 +84,23 @@ jobs:
 
       - name: Render WAV
         run: |
-          timeout 10m sclang "$GITHUB_WORKSPACE/canon/export_wav.scd"
-          test -s canon_in_d.wav
-        working-directory: ${{ github.workspace }}/canon
+          CANON_PROJECT_DIR="$GITHUB_WORKSPACE/${{ env.PROJ }}" \
+          CANON_RECORD_PATH="$GITHUB_WORKSPACE/${{ env.PROJ }}/${{ env.PROJ }}.wav" \
+          timeout 10m sclang "$GITHUB_WORKSPACE/${{ env.PROJ }}/export_wav.scd"
+          test -s "${{ env.PROJ }}.wav"
+        working-directory: ${{ github.workspace }}/${{ env.PROJ }}
 
       - name: Convert WAV to MP3
         run: |
-          ffmpeg -y -i canon_in_d.wav -codec:a libmp3lame -q:a 2 canon_in_d.mp3
-          test -s canon_in_d.mp3
-        working-directory: ${{ github.workspace }}/canon
+          ffmpeg -y -i ${{ env.PROJ }}.wav -codec:a libmp3lame -q:a 2 ${{ env.PROJ }}.mp3
+          test -s ${{ env.PROJ }}.mp3
+        working-directory: ${{ github.workspace }}/${{ env.PROJ }}
 
       - name: Show audio metadata
         run: |
-          ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 canon_in_d.wav
-          ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 canon_in_d.mp3
-        working-directory: ${{ github.workspace }}/canon
+          ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 ${{ env.PROJ }}.wav
+          ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 ${{ env.PROJ }}.mp3
+        working-directory: ${{ github.workspace }}/${{ env.PROJ }}
 
       - name: Show JACK log on failure
         if: failure()
@@ -80,9 +110,18 @@ jobs:
       - name: Upload rendered audio
         uses: actions/upload-artifact@v4
         with:
-          name: canon-in-d-audio
+          name: ${{ env.PROJ }}-audio
           path: |
-            canon/canon_in_d.wav
-            canon/canon_in_d.mp3
+            ${{ env.PROJ }}/${{ env.PROJ }}.wav
+            ${{ env.PROJ }}/${{ env.PROJ }}.mp3
           if-no-files-found: error
           retention-days: 14
+
+      - name: Attach audio to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          gh release create "$TAG" --generate-notes || true
+          gh release upload "$TAG" "${{ env.PROJ }}"/${{ env.PROJ }}.wav "${{ env.PROJ }}"/${{ env.PROJ }}.mp3 --clobber

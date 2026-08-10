@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "render:strudel": "node canon/render_strudel.mjs"
+    "render:strudel": "node scripts/render_strudel.mjs"
   },
   "devDependencies": {
     "puppeteer": "25.4.0"

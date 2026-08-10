@@ -29,7 +29,7 @@
 相关文件：
 
 - `canon/strudel.html`：网页播放器和乐曲 Pattern。
-- `canon/render_strudel.mjs`：基于 Puppeteer 的自动录音脚本。
+- `scripts/render_strudel.mjs`：基于 Puppeteer 的自动录音脚本。
 - `.github/workflows/strudel.yml`：自动生成 MP3 的工作流。
 
 ### 优点
