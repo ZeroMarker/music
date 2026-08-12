@@ -19,31 +19,31 @@ s.waitForBoot {
 
     SynthDef(\pluckedSilk, { |out=0, freq=440, amp=0.1, gate=1, pan=0|
         var strike = PinkNoise.ar(0.35) * EnvGen.kr(Env.perc(0.001, 0.025));
-        var body = Ringz.ar(strike, [freq, freq*2.01, freq*3.98], [2.8, 1.7, 1.1], [1, .35, .12]).sum;
+        var body = Ringz.ar(strike, [freq, freq*2.01, freq*3.98], [2.8, 1.7, 1.1], [1, 0.35, 0.12]).sum;
         var env = EnvGen.kr(Env.asr(0.002, 1, 1.6), gate, doneAction: 2);
         Out.ar(out, Pan2.ar(LPF.ar(body, 4200) * env * amp, pan));
     }).add;
 
     SynthDef(\breathFlute, { |out=0, freq=440, amp=0.1, gate=1, pan=0|
         var vib = SinOsc.kr(4.8, 0, 0.008, 1);
-        var tone = SinOsc.ar(freq*vib) + (SinOsc.ar(freq*2.01) * .16);
-        var breath = BPF.ar(PinkNoise.ar(.12), freq*2.4, .5);
-        var env = EnvGen.kr(Env.adsr(.18, .2, .72, .8), gate, doneAction: 2);
+        var tone = SinOsc.ar(freq*vib) + (SinOsc.ar(freq*2.01) * 0.16);
+        var breath = BPF.ar(PinkNoise.ar(0.12), freq*2.4, 0.5);
+        var env = EnvGen.kr(Env.adsr(0.18, 0.2, 0.72, 0.8), gate, doneAction: 2);
         Out.ar(out, Pan2.ar((tone + breath) * env * amp, pan));
     }).add;
 
-    SynthDef(\singingString, { |out=0, freq=440, amp=.1, gate=1, pan=0|
-        var vib = SinOsc.kr(5.2 + LFNoise1.kr(.3).range(-.25,.25), 0, .013, 1);
-        var bow = VarSaw.ar(freq*vib*[.997,1.003], 0, .36).sum * .45;
-        var tone = RLPF.ar(bow, (freq*4).clip(900,4200), .28);
-        var env = EnvGen.kr(Env.adsr(.22,.35,.78,1.1), gate, doneAction: 2);
+    SynthDef(\singingString, { |out=0, freq=440, amp=0.1, gate=1, pan=0|
+        var vib = SinOsc.kr(5.2 + LFNoise1.kr(0.3).range(-0.25,0.25), 0, 0.013, 1);
+        var bow = VarSaw.ar(freq*vib*[0.997,1.003], 0, 0.36).sum * 0.45;
+        var tone = RLPF.ar(bow, (freq*4).clip(900,4200), 0.28);
+        var env = EnvGen.kr(Env.adsr(0.22,0.35,0.78,1.1), gate, doneAction: 2);
         Out.ar(out, Pan2.ar(tone * env * amp, pan));
     }).add;
 
     SynthDef(\mistHall, { |out=0|
         var dry = In.ar(out, 2);
-        var wet = FreeVerb2.ar(dry[0], dry[1], .38, .88, .28);
-        ReplaceOut.ar(out, Limiter.ar((dry*.72)+(LPF.ar(wet,5200)*.32), .92));
+        var wet = FreeVerb2.ar(dry[0], dry[1], 0.38, 0.88, 0.28);
+        ReplaceOut.ar(out, Limiter.ar((dry*0.72)+(LPF.ar(wet,5200)*0.32), 0.92));
     }).add;
     s.sync;
     Synth.tail(~liangzhuGroup, \mistHall);
@@ -53,15 +53,15 @@ s.waitForBoot {
     };
 
     Pdef(\bass, Pbind(\instrument, \breathFlute, \group, ~liangzhuGroup,
-        \midinote, Pseq(roots-12, inf), \dur, 2, \legato, .86, \amp, .075, \pan, -.28)).play(~liangzhuClock, quant: 1);
+        \midinote, Pseq(roots-12, inf), \dur, 2, \legato, 0.86, \amp, 0.075, \pan, -0.28)).play(~liangzhuClock, quant: 1);
     Pdef(\moonLute, Pbind(\instrument, \pluckedSilk, \group, ~liangzhuGroup,
         \midinote, Pseq(roots.collect({ |n| [n+12,n+19,n+24,n+19] }).flat, inf),
-        \dur, .5, \legato, .38, \amp, Pwhite(.07,.11,inf), \pan, -.16)).play(~liangzhuClock, quant: 1);
+        \dur, 0.5, \legato, 0.38, \amp, Pwhite(0.07,0.11,inf), \pan, -0.16)).play(~liangzhuClock, quant: 1);
     Pdef(\xiao, Pbind(\instrument, \breathFlute, \group, ~liangzhuGroup,
-        \midinote, Pseq(answer, inf), \dur, 1, \legato, .9, \amp, .09, \pan, .25)).play(~liangzhuClock, quant: 1);
+        \midinote, Pseq(answer, inf), \dur, 1, \legato, 0.9, \amp, 0.09, \pan, 0.25)).play(~liangzhuClock, quant: 1);
     Pdef(\erhu, Pbind(\instrument, \singingString, \group, ~liangzhuGroup,
-        \midinote, Pseq(theme, inf), \dur, .5, \legato, Pseq([.9,.78,.96,.82],inf),
-        \amp, Pseg(Pseq([.08,.145,.1],inf),Pseq([16,16],inf)), \pan, .12)).play(~liangzhuClock, quant: 1);
+        \midinote, Pseq(theme, inf), \dur, 0.5, \legato, Pseq([0.9,0.78,0.96,0.82],inf),
+        \amp, Pseg(Pseq([0.08,0.145,0.1],inf),Pseq([16,16],inf)), \pan, 0.12)).play(~liangzhuClock, quant: 1);
 
     if (recordPath.notNil) {
         Routine({ recordDuration.wait; ~stopLiangzhu.(); 4.wait; s.stopRecording; 2.wait; s.quit; 1.wait; 0.exit; }).play(SystemClock);
