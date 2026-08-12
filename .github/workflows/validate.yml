@@ -31,6 +31,10 @@ jobs:
           MUSIC_PROJECT_DIR: ${{ github.workspace }}/${{ matrix.project }}
           MUSIC_RECORD_PATH: ${{ runner.temp }}/${{ matrix.project }}-smoke.webm
         run: npm run render:strudel
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg
       - name: Reject missing or silent audio
         run: |
           test -s "${{ runner.temp }}/${{ matrix.project }}-smoke.webm"
