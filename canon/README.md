@@ -2,7 +2,8 @@
 
 ## Strudel (browser)
 
-Open `strudel.html` in a browser and click **Play**. Uses built-in
+Run `npm ci` in the repository root, then open `strudel.html` in a browser and
+click **Play**. Uses built-in
 synthesizers (triangle for piano, sawtooth for violin) via Strudel's
 Web Audio engine.
 
@@ -35,7 +36,7 @@ The rendered file is written to `canon_in_d.wav`.
 For a short test render:
 
 ```bash
-CANON_RECORD_DURATION=5 CANON_RECORD_PATH=canon_test.wav sclang export_wav.scd
+MUSIC_RECORD_DURATION=5 MUSIC_RECORD_PATH=canon_test.wav sclang export_wav.scd
 ```
 
 ## GitHub Actions
@@ -61,8 +62,8 @@ Run it from the Actions tab with **Render SuperCollider** > **Run workflow**
 
 The workflow in `../.github/workflows/strudel.yml` renders `strudel.html`
 to MP3 using headless Chrome and Puppeteer. The shared capture script is
-`../scripts/render_strudel.mjs`; `CANON_PROJECT_DIR`, `CANON_RECORD_DURATION`
-and `CANON_RECORD_PATH` control the project directory, recording length
+`../scripts/render_strudel.mjs`; `MUSIC_PROJECT_DIR`, `MUSIC_RECORD_DURATION`
+and `MUSIC_RECORD_PATH` control the project directory, recording length
 (137.2 s default) and output path. On tag pushes the MP3 is also attached to
 the GitHub Release.
 

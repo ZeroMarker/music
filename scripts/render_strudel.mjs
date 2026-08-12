@@ -1,34 +1,62 @@
 import { createServer } from 'node:http';
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import puppeteer from 'puppeteer';
 
-// Shared renderer: reads <project>/strudel.html, records to CANON_RECORD_PATH.
-//   CANON_PROJECT_DIR     project directory (default: current working directory)
-//   CANON_RECORD_DURATION recording length in seconds (default: 137.2)
-//   CANON_RECORD_PATH     output WebM path (default: <project>/strudel.webm)
-const projectDir = process.env.CANON_PROJECT_DIR
-  ? path.resolve(process.env.CANON_PROJECT_DIR)
+// Shared renderer: reads <project>/strudel.html and project.json.
+//   MUSIC_PROJECT_DIR     project directory (default: current working directory)
+//   MUSIC_RECORD_DURATION recording length (default: project config, then 137.2)
+//   MUSIC_RECORD_PATH     output WebM path (default: <project>/strudel.webm)
+// Legacy CANON_* aliases remain supported.
+const projectDirValue = process.env.MUSIC_PROJECT_DIR ?? process.env.CANON_PROJECT_DIR;
+const projectDir = projectDirValue
+  ? path.resolve(projectDirValue)
   : process.cwd();
-const durationSeconds = Number(process.env.CANON_RECORD_DURATION ?? 137.2);
-const outputPath = process.env.CANON_RECORD_PATH
-  ? path.resolve(process.env.CANON_RECORD_PATH)
+let projectConfig = {};
+try {
+  projectConfig = JSON.parse(await readFile(path.join(projectDir, 'project.json'), 'utf8'));
+} catch (error) {
+  if (error.code !== 'ENOENT') throw new Error(`Invalid project.json: ${error.message}`);
+}
+const durationSeconds = Number(
+  process.env.MUSIC_RECORD_DURATION
+    ?? process.env.CANON_RECORD_DURATION
+    ?? projectConfig.renderDurationSeconds
+    ?? 137.2,
+);
+const outputValue = process.env.MUSIC_RECORD_PATH ?? process.env.CANON_RECORD_PATH;
+const outputPath = outputValue
+  ? path.resolve(outputValue)
   : path.join(projectDir, 'strudel.webm');
 
 if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
-  throw new Error('CANON_RECORD_DURATION must be a positive number');
+  throw new Error('MUSIC_RECORD_DURATION must be a positive number');
 }
 
+await mkdir(path.dirname(outputPath), { recursive: true });
+
 const server = createServer(async (request, response) => {
-  if (request.url !== '/' && request.url !== '/strudel.html') {
+  if (request.url === '/favicon.ico') {
+    response.writeHead(204).end();
+    return;
+  }
+  const requestedFile = request.url === '/node_modules/@strudel/web/dist/index.js'
+    ? path.resolve('node_modules/@strudel/web/dist/index.js')
+    : request.url === '/' || request.url === '/strudel.html'
+      ? path.join(projectDir, 'strudel.html')
+      : null;
+  if (!requestedFile) {
     response.writeHead(404).end();
     return;
   }
 
   try {
-    const content = await readFile(path.join(projectDir, 'strudel.html'));
-    response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    const content = await readFile(requestedFile);
+    const contentType = requestedFile.endsWith('.js')
+      ? 'text/javascript; charset=utf-8'
+      : 'text/html; charset=utf-8';
+    response.writeHead(200, { 'Content-Type': contentType });
     response.end(content);
   } catch (error) {
     response.writeHead(500).end(String(error));
@@ -57,6 +85,9 @@ try {
   const page = await browser.newPage();
   page.on('console', (message) => console.log(`PAGE: ${message.text()}`));
   page.on('pageerror', (error) => console.error(`PAGE ERROR: ${error.message}`));
+  page.on('response', (response) => {
+    if (response.status() >= 400) console.error(`HTTP ${response.status()}: ${response.url()}`);
+  });
 
   await page.evaluateOnNewDocument(() => {
     const OriginalAudioContext = window.AudioContext || window.webkitAudioContext;

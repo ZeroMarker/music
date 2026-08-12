@@ -54,7 +54,10 @@ jobs:
             echo "error: unknown project '$PROJ'" >&2
             exit 1
           fi
+          npm run check -- "$PROJ"
+          DURATION="$(jq -er '.renderDurationSeconds | select(type == "number" and . > 0)' "$PROJ/project.json")"
           echo "PROJ=$PROJ" >> "$GITHUB_ENV"
+          echo "MUSIC_RECORD_DURATION=$DURATION" >> "$GITHUB_ENV"
           echo "Rendering project: $PROJ"
 
       - name: Install SuperCollider and ffmpeg
@@ -84,8 +87,9 @@ jobs:
 
       - name: Render WAV
         run: |
-          CANON_PROJECT_DIR="$GITHUB_WORKSPACE/${{ env.PROJ }}" \
-          CANON_RECORD_PATH="$GITHUB_WORKSPACE/${{ env.PROJ }}/${{ env.PROJ }}.wav" \
+          MUSIC_PROJECT_DIR="$GITHUB_WORKSPACE/${{ env.PROJ }}" \
+          MUSIC_RECORD_PATH="$GITHUB_WORKSPACE/${{ env.PROJ }}/${{ env.PROJ }}.wav" \
+          MUSIC_RECORD_DURATION="${{ env.MUSIC_RECORD_DURATION }}" \
           timeout 10m sclang "$GITHUB_WORKSPACE/${{ env.PROJ }}/export_wav.scd"
           test -s "${{ env.PROJ }}.wav"
         working-directory: ${{ github.workspace }}/${{ env.PROJ }}
@@ -94,6 +98,12 @@ jobs:
         run: |
           ffmpeg -y -i ${{ env.PROJ }}.wav -codec:a libmp3lame -q:a 2 ${{ env.PROJ }}.mp3
           test -s ${{ env.PROJ }}.mp3
+          ffmpeg -i ${{ env.PROJ }}.wav -af volumedetect -f null - 2> volume.log
+          if grep -q "max_volume: -inf" volume.log; then
+            echo "error: rendered audio appears to be silent" >&2
+            cat volume.log
+            exit 1
+          fi
         working-directory: ${{ github.workspace }}/${{ env.PROJ }}
 
       - name: Show audio metadata
@@ -123,5 +133,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
-          gh release create "$TAG" --generate-notes || true
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes
           gh release upload "$TAG" "${{ env.PROJ }}"/${{ env.PROJ }}.wav "${{ env.PROJ }}"/${{ env.PROJ }}.mp3 --clobber

@@ -1,0 +1,41 @@
+name: Validate project
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  strudel-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        project: [canon, liangzhu]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Read smoke-test duration
+        run: echo "MUSIC_RECORD_DURATION=$(jq -er '.smokeDurationSeconds' '${{ matrix.project }}/project.json')" >> "$GITHUB_ENV"
+      - name: Render short Strudel sample
+        env:
+          MUSIC_PROJECT_DIR: ${{ github.workspace }}/${{ matrix.project }}
+          MUSIC_RECORD_PATH: ${{ runner.temp }}/${{ matrix.project }}-smoke.webm
+        run: npm run render:strudel
+      - name: Reject missing or silent audio
+        run: |
+          test -s "${{ runner.temp }}/${{ matrix.project }}-smoke.webm"
+          ffmpeg -i "${{ runner.temp }}/${{ matrix.project }}-smoke.webm" -af volumedetect -f null - 2> volume.log
+          if grep -q "max_volume: -inf" volume.log; then
+            cat volume.log
+            exit 1
+          fi

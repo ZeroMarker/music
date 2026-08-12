@@ -23,9 +23,6 @@ jobs:
     name: Export MP3
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      CANON_RECORD_DURATION: "137.2"
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -53,7 +50,10 @@ jobs:
             echo "error: unknown project '$PROJ'" >&2
             exit 1
           fi
+          npm run check -- "$PROJ"
+          DURATION="$(jq -er '.renderDurationSeconds | select(type == "number" and . > 0)' "$PROJ/project.json")"
           echo "PROJ=$PROJ" >> "$GITHUB_ENV"
+          echo "MUSIC_RECORD_DURATION=$DURATION" >> "$GITHUB_ENV"
           echo "Rendering project: $PROJ"
 
       - name: Setup Node.js
@@ -67,8 +67,8 @@ jobs:
 
       - name: Render audio
         env:
-          CANON_PROJECT_DIR: ${{ github.workspace }}/${{ env.PROJ }}
-          CANON_RECORD_PATH: ${{ github.workspace }}/${{ env.PROJ }}/${{ env.PROJ }}_strudel.webm
+          MUSIC_PROJECT_DIR: ${{ github.workspace }}/${{ env.PROJ }}
+          MUSIC_RECORD_PATH: ${{ github.workspace }}/${{ env.PROJ }}/${{ env.PROJ }}_strudel.webm
         run: npm run render:strudel
 
       - name: Convert to MP3
@@ -77,6 +77,12 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg
           ffmpeg -y -i ${{ env.PROJ }}_strudel.webm -codec:a libmp3lame -q:a 2 ${{ env.PROJ }}_strudel.mp3
           test -s ${{ env.PROJ }}_strudel.mp3
+          ffmpeg -i ${{ env.PROJ }}_strudel.mp3 -af volumedetect -f null - 2> volume.log
+          if grep -q "max_volume: -inf" volume.log; then
+            echo "error: rendered audio appears to be silent" >&2
+            cat volume.log
+            exit 1
+          fi
         working-directory: ${{ github.workspace }}/${{ env.PROJ }}
 
       - name: Show metadata
@@ -97,5 +103,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
-          gh release create "$TAG" --generate-notes || true
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes
           gh release upload "$TAG" "${{ env.PROJ }}"/${{ env.PROJ }}_strudel.mp3 --clobber

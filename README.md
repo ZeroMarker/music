@@ -17,7 +17,14 @@
 │   ├── strudel.html              # Strudel 网页播放器（Pattern 乐谱）
 │   ├── main.scd                  # SuperCollider 编排（SynthDef + Pattern）
 │   ├── export_wav.scd            # SuperCollider 命令行 WAV 导出入口
+│   ├── project.json              # 项目名称、速度和渲染时长
 │   └── README.md                 # canon 使用说明
+├── liangzhu/                     # 《化蝶清梦》原创五声音阶项目
+│   ├── project.json              # 项目名称、速度和渲染时长
+│   ├── strudel.html              # Strudel 网页播放器
+│   ├── main.scd                  # SuperCollider 室内乐编排
+│   ├── export_wav.scd            # WAV 导出入口
+│   └── README.md                 # liangzhu 使用说明
 ├── scripts/
 │   └── render_strudel.mjs        # 共享 Puppeteer 无头录制脚本（WebM）
 ├── .github/workflows/
@@ -33,6 +40,7 @@
 - `strudel.html` — Strudel 网页版乐谱
 - `main.scd` — SuperCollider 编排（`export_wav.scd` 会自动加载同目录的它）
 - `export_wav.scd` — 可直接复制 `canon/` 的入口，或按需调整默认时长
+- `project.json` — 项目元数据、正式渲染时长和冒烟测试时长
 
 新项目可沿用双轨渲染，无需改动任何 workflow。**项目目录名**只能包含字母、
 数字和下划线（如 `canon`、`bach_partita`），发布时推送
@@ -44,7 +52,7 @@
 
 ### Strudel（浏览器）
 
-直接打开 `canon/strudel.html`，点击 **Play**。乐谱使用 Strudel Pattern 编写，
+先运行 `npm ci`，再打开 `canon/strudel.html` 并点击 **Play**。乐谱使用 Strudel Pattern 编写，
 音色为内置合成器（三角波钢琴、锯齿波小提琴）。
 
 ### SuperCollider（本地）
@@ -63,7 +71,7 @@ sclang export_wav.scd            # 默认输出 canon_in_d.wav（137.2 秒）
 可用环境变量覆盖输出路径与时长：
 
 ```bash
-CANON_RECORD_PATH=canon_test.wav CANON_RECORD_DURATION=5 sclang export_wav.scd
+MUSIC_RECORD_PATH=canon_test.wav MUSIC_RECORD_DURATION=5 sclang export_wav.scd
 ```
 
 ### 命令行渲染 Strudel（需要 Node.js 22+）
@@ -76,9 +84,19 @@ npm run render:strudel           # 默认输出 canon/strudel.webm（137.2 秒�
 可通过环境变量指定项目与输出路径：
 
 ```bash
-CANON_PROJECT_DIR=canon \
-CANON_RECORD_PATH=canon/canon_strudel.webm \
+MUSIC_PROJECT_DIR=canon \
+MUSIC_RECORD_PATH=canon/canon_strudel.webm \
 npm run render:strudel
+```
+
+渲染器默认从项目的 `project.json` 读取时长，也可用
+`MUSIC_RECORD_DURATION` 覆盖。旧的 `CANON_*` 变量仍兼容。Strudel 浏览器包由
+npm 锁定并从本地提供，自动渲染不依赖第三方 CDN。
+
+项目结构检查：
+
+```bash
+npm run check -- canon
 ```
 
 ## 自动化渲染（GitHub Actions）
