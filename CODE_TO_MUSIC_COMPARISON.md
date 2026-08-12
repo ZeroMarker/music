@@ -5,7 +5,8 @@
 - **Strudel**：运行在浏览器中的音乐编程环境，基于 Web Audio。
 - **SuperCollider**：面向声音合成和算法作曲的原生音频平台。
 
-当前示例均用于演奏《D 大调卡农》，并可通过 GitHub Actions 自动渲染音频。
+当前包含《D 大调卡农》和原创五声音阶作品《化蝶清梦》两个项目，均可通过
+GitHub Actions 自动渲染音频。
 
 ## 总体对比
 
@@ -16,7 +17,7 @@
 | 编曲方式 | Pattern 和链式 API | Pattern、SynthDef、Routine 和音频总线 |
 | 实时交互 | 优秀，适合网页和 Live Coding | 优秀，但默认缺少网页界面 |
 | 音色设计 | 适合快速使用内置合成器和采样 | 可深入控制振荡器、滤波器、包络和效果器 |
-| 当前配器 | 钢琴、小提琴 | 钢琴、小提琴、中提琴、大提琴 |
+| 当前配器 | 卡农：钢琴、小提琴；化蝶：低音、丝弦与旋律声部 | 卡农：钢琴与弦乐四声部；化蝶：月琴、洞箫、二胡与低音 |
 | 当前音色 | 三角波、锯齿波等基础合成音色 | 自定义钢琴、弦乐、琴体共振和混响 |
 | 离线产物 | 浏览器实时录制 WebM，再转 MP3 | 直接录制 WAV，再转 MP3 |
 | 自动化复杂度 | Node.js、Chromium、Puppeteer、ffmpeg | SuperCollider、JACK、ffmpeg |
@@ -28,7 +29,7 @@
 
 相关文件：
 
-- `canon/strudel.html`：网页播放器和乐曲 Pattern。
+- `<project>/strudel.html`：网页播放器和乐曲 Pattern。
 - `scripts/render_strudel.mjs`：基于 Puppeteer 的自动录音脚本。
 - `.github/workflows/strudel.yml`：自动生成 MP3 的工作流。
 
@@ -62,8 +63,8 @@ strudel.html
 
 相关文件：
 
-- `canon/main.scd`：配器、合成器、乐谱和播放逻辑。
-- `canon/export_wav.scd`：命令行导出入口。
+- `<project>/main.scd`：配器、合成器、乐谱和播放逻辑。
+- `<project>/export_wav.scd`：命令行导出入口。
 - `.github/workflows/render.yml`：自动生成 WAV 和 MP3 的工作流。
 
 ### 优点

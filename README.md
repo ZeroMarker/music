@@ -26,10 +26,12 @@
 │   ├── export_wav.scd            # WAV 导出入口
 │   └── README.md                 # liangzhu 使用说明
 ├── scripts/
-│   └── render_strudel.mjs        # 共享 Puppeteer 无头录制脚本（WebM）
+│   ├── render_strudel.mjs        # 共享 Puppeteer 无头录制脚本（WebM）
+│   └── validate_projects.mjs     # 自动发现并校验项目结构与配置
 ├── .github/workflows/
 │   ├── strudel.yml               # CI：Strudel → MP3（按标签解析项目）
-│   └── render.yml                # CI：SuperCollider → WAV + MP3（按标签解析项目）
+│   ├── render.yml                # CI：SuperCollider → WAV + MP3（按标签解析项目）
+│   └── validate.yml              # CI：全部项目的短时 Strudel 冒烟测试
 └── package.json                  # npm 脚本（Puppeteer 录制）
 ```
 
@@ -52,8 +54,10 @@
 
 ### Strudel（浏览器）
 
-先运行 `npm ci`，再打开 `canon/strudel.html` 并点击 **Play**。乐谱使用 Strudel Pattern 编写，
-音色为内置合成器（三角波钢琴、锯齿波小提琴）。
+先运行 `npm ci`，再打开项目的 `strudel.html` 并点击 **Play**。例如：
+
+- `canon/strudel.html`：钢琴与小提琴版《D 大调卡农》
+- `liangzhu/strudel.html`：五声音阶原创作品《化蝶清梦》
 
 ### SuperCollider（本地）
 
@@ -65,7 +69,7 @@
 
 ```bash
 cd canon
-sclang export_wav.scd            # 默认输出 canon_in_d.wav（137.2 秒）
+sclang export_wav.scd            # 默认输出 canon.wav（137.2 秒）
 ```
 
 可用环境变量覆盖输出路径与时长：
@@ -93,11 +97,13 @@ npm run render:strudel
 `MUSIC_RECORD_DURATION` 覆盖。旧的 `CANON_*` 变量仍兼容。Strudel 浏览器包由
 npm 锁定并从本地提供，自动渲染不依赖第三方 CDN。
 
-项目结构检查：
+自动发现并检查全部项目：
 
 ```bash
-npm run check -- canon
+npm run check
 ```
+
+也可以只检查指定项目：`npm run check -- liangzhu`。
 
 ## 自动化渲染（GitHub Actions）
 
@@ -119,6 +125,15 @@ npm run check -- canon
 
 - `canon.wav` / `canon.mp3` — SuperCollider 母版
 - `canon_strudel.mp3` — Strudel 网页版
+
+## 已发布作品
+
+| 作品 | 版本 | 音频 |
+| --- | --- | --- |
+| 化蝶清梦（Butterfly Lovers · Reverie） | [`liangzhu-1.0.1`](https://github.com/ZeroMarker/music/releases/tag/liangzhu-1.0.1) | [WAV 母版](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu.wav) · [SuperCollider MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu.mp3) · [Strudel MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu_strudel.mp3) |
+
+梁祝项目以 `1.0.1` 为首个完整双引擎版本；`1.0.0` 仅生成了 Strudel 资产，
+不建议作为完整版本使用。
 
 ## 许可
 

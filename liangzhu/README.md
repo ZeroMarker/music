@@ -3,6 +3,25 @@
 以中国五声音阶、越剧气质与化蝶意象创作的原创代码音乐项目。它不是《梁祝》
 协奏曲的逐音复刻。
 
+## 下载
+
+当前完整版本：[`liangzhu-1.0.1`](https://github.com/ZeroMarker/music/releases/tag/liangzhu-1.0.1)
+
+- [liangzhu.wav](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu.wav) — SuperCollider 无损母版
+- [liangzhu.mp3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu.mp3) — SuperCollider MP3
+- [liangzhu_strudel.mp3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu_strudel.mp3) — Strudel 网页版 MP3
+
+`1.0.0` 只包含 Strudel 资产；SuperCollider 语法问题已在 `1.0.1` 修复，
+请使用 `1.0.1` 或更新版本。
+
+## 编排
+
+- 速度：72 BPM
+- 调式材料：以 D 为中心的中国五声音阶
+- Strudel：低音脉冲、丝弦拨奏与化蝶旋律
+- SuperCollider：月琴、洞箫、二胡和低音声部的合成室内乐
+- 正式渲染时长：128 秒，随后保留约 5 秒效果尾音
+
 ## Strudel
 
 在仓库根目录运行 `npm ci`，打开 `strudel.html`，点击 **Play**。
@@ -33,3 +52,15 @@ sclang export_wav.scd
 
 默认输出 `liangzhu.wav`，时长 128 秒。可通过 `MUSIC_RECORD_PATH` 和
 `MUSIC_RECORD_DURATION` 覆盖。
+
+## 发布
+
+推送 `<项目>-<版本>` 标签会并行生成 Strudel MP3 与 SuperCollider
+WAV/MP3，并上传至同一个 GitHub Release：
+
+```bash
+git tag -a liangzhu-1.0.2 -m "Liangzhu 1.0.2"
+git push origin liangzhu-1.0.2
+```
+
+发布前可执行 `npm run check -- liangzhu`，并用短时渲染检查网页音频。

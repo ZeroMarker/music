@@ -31,7 +31,7 @@ To export a WAV from the command line (sclang must be on PATH):
 sclang export_wav.scd
 ```
 
-The rendered file is written to `canon_in_d.wav`.
+The rendered file is written to `canon.wav`.
 
 For a short test render:
 
