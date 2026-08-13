@@ -67,7 +67,7 @@ jobs:
           MUSIC_RECORD_PATH="$GITHUB_WORKSPACE/${{ env.PROJ }}/${{ env.PROJ }}_csound.wav" \
           MUSIC_RECORD_DURATION="${{ env.MUSIC_RECORD_DURATION }}" \
           timeout 10m bash scripts/render_csound.sh
-          test -s "${{ env.PROJ }}_csound.wav"
+          test -s "${{ env.PROJ }}/${{ env.PROJ }}_csound.wav"
         working-directory: ${{ github.workspace }}
 
       - name: Convert WAV to MP3
