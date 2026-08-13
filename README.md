@@ -1,10 +1,11 @@
 # music — Code to Music
 
-用代码生成音乐的项目。每首作品通过两套技术方案实现，并可在 GitHub Actions
+用代码生成音乐的项目。每首作品通过三套技术方案实现，并可在 GitHub Actions
 上自动渲染音频产物。
 
 - **Strudel**：浏览器端音乐编程环境（Web Audio），适合网页播放与快速原型。
 - **SuperCollider**：原生音频平台，适合高质量合成、复杂配器和 WAV 母版。
+- **Csound**：经典音频语言，单文件 orchestra + score，纯命令行确定性渲染。
 
 详细的方案对比与选型建议见
 [CODE_TO_MUSIC_COMPARISON.md](CODE_TO_MUSIC_COMPARISON.md)。
@@ -17,6 +18,7 @@
 │   ├── strudel.html              # Strudel 网页播放器（Pattern 乐谱）
 │   ├── main.scd                  # SuperCollider 编排（SynthDef + Pattern）
 │   ├── export_wav.scd            # SuperCollider 命令行 WAV 导出入口
+│   ├── main.csd                  # Csound 编排（orchestra + 调度器 + score）
 │   ├── project.json              # 项目名称、速度和渲染时长
 │   └── README.md                 # canon 使用说明
 ├── liangzhu/                     # 《化蝶清梦》原创五声音阶项目
@@ -24,14 +26,17 @@
 │   ├── strudel.html              # Strudel 网页播放器
 │   ├── main.scd                  # SuperCollider 室内乐编排
 │   ├── export_wav.scd            # WAV 导出入口
+│   ├── main.csd                  # Csound 编排
 │   └── README.md                 # liangzhu 使用说明
 ├── scripts/
 │   ├── render_strudel.mjs        # 共享 Puppeteer 无头录制脚本（WebM）
+│   ├── render_csound.sh          # 共享 Csound 命令行渲染脚本（WAV）
 │   └── validate_projects.mjs     # 自动发现并校验项目结构与配置
 ├── .github/workflows/
 │   ├── strudel.yml               # CI：Strudel → MP3（按标签解析项目）
 │   ├── render.yml                # CI：SuperCollider → WAV + MP3（按标签解析项目）
-│   └── validate.yml              # CI：全部项目的短时 Strudel 冒烟测试
+│   ├── csound.yml                # CI：Csound → WAV + MP3（按标签解析项目）
+│   └── validate.yml              # CI：全部项目的短时 Strudel/Csound 冒烟测试
 └── package.json                  # npm 脚本（Puppeteer 录制）
 ```
 
@@ -42,13 +47,14 @@
 - `strudel.html` — Strudel 网页版乐谱
 - `main.scd` — SuperCollider 编排（`export_wav.scd` 会自动加载同目录的它）
 - `export_wav.scd` — 可直接复制 `canon/` 的入口，或按需调整默认时长
+- `main.csd` — Csound 编排（`render_csound.sh` 会自动加载同目录的它）
 - `project.json` — 项目元数据、正式渲染时长和冒烟测试时长
 
-新项目可沿用双轨渲染，无需改动任何 workflow。**项目目录名**只能包含字母、
+新项目可沿用三轨渲染，无需改动任何 workflow。**项目目录名**只能包含字母、
 数字和下划线（如 `canon`、`bach_partita`），发布时推送
 **`<项目目录名>-<版本号>`** 标签（如 `canon-1.0.0`）：标签中的 `-` 是唯一
 分隔符，版本号为纯数字点分形式（`1.0.0`，**不带** `-beta` 等预发布后缀）。
-两个 workflow 会自动从标签解析项目名并渲染，格式非法时快速失败。
+三个 workflow 会自动从标签解析项目名并渲染，格式非法时快速失败。
 
 ## 快速开始
 
@@ -105,6 +111,30 @@ npm run check
 
 也可以只检查指定项目：`npm run check -- liangzhu`。
 
+### 命令行渲染 Csound（需要 Csound 6+）
+
+```bash
+npm run render:csound --   # 或 bash scripts/render_csound.sh
+```
+
+默认渲染当前目录下的 `main.csd`（时长取自 `project.json`），输出
+`<项目名>_csound.wav`。可通过环境变量指定项目、时长与输出路径：
+
+```bash
+MUSIC_PROJECT_DIR=canon \
+MUSIC_RECORD_PATH=canon/canon_csound.wav \
+MUSIC_RECORD_DURATION=8 \
+bash scripts/render_csound.sh
+```
+
+也可直接调用 csound（`#ifndef DURATION` 提供文件内默认时长，可用
+`--smacro:DURATION` 覆盖）：
+
+```bash
+cd canon
+csound --smacro:DURATION=8 -o canon_csound.wav main.csd
+```
+
 ## 自动化渲染（GitHub Actions）
 
 两个工作流均监听**任意 `*-*` 标签**（如 `canon-1.0.0`），从标签中解析出
@@ -115,15 +145,17 @@ npm run check
 | 工作流 | 产物（以 `<proj>` 为例） |
 | --- | --- |
 | `render.yml` | `<proj>.wav` + `<proj>.mp3`（SuperCollider 母版） |
+| `csound.yml` | `<proj>_csound.wav` + `<proj>_csound.mp3`（Csound 版） |
 | `strudel.yml` | `<proj>_strudel.mp3`（Strudel 网页版） |
 
 产物以 GitHub Actions Artifact 形式提供，保留 14 天。
 
-推送 `<proj>-<version>` 标签发布时，两个工作流还会把各自的产物自动上传到
+推送 `<proj>-<version>` 标签发布时，三个工作流还会把各自的产物自动上传到
 **GitHub Release**（若 Release 不存在则自动创建，并生成发布说明），例如
 `canon-1.0.0` 的 Release 包含：
 
 - `canon.wav` / `canon.mp3` — SuperCollider 母版
+- `canon_csound.wav` / `canon_csound.mp3` — Csound 版
 - `canon_strudel.mp3` — Strudel 网页版
 
 ## 已发布作品

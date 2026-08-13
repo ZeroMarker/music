@@ -1,0 +1,108 @@
+name: Render Csound
+
+on:
+  push:
+    tags:
+      - "*-*" # e.g. canon-1.0.0, my-project-2.1.0
+  workflow_dispatch:
+    inputs:
+      project:
+        description: "Project directory to render (e.g. canon)"
+        required: true
+        default: canon
+
+permissions:
+  contents: write
+
+concurrency:
+  group: render-csound-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    name: Export WAV and MP3
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Resolve project name
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            PROJ="${{ inputs.project }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+            PROJ="${TAG%-*}"
+            VERSION="${TAG##*-}"
+            if [[ ! "$VERSION" =~ ^[0-9]+(\.[0-9]+)*$ ]]; then
+              echo "error: invalid version '$VERSION' in tag '$TAG' (expected e.g. 1.0.0, no dashes)" >&2
+              exit 1
+            fi
+          fi
+          if [[ ! "$PROJ" =~ ^[A-Za-z0-9_]+$ ]]; then
+            echo "error: invalid project name '$PROJ' (use letters, digits, underscore only)" >&2
+            exit 1
+          fi
+          if [[ ! -d "$PROJ" ]]; then
+            echo "error: unknown project '$PROJ'" >&2
+            exit 1
+          fi
+          npm run check -- "$PROJ"
+          DURATION="$(jq -er '.renderDurationSeconds | select(type == "number" and . > 0)' "$PROJ/project.json")"
+          echo "PROJ=$PROJ" >> "$GITHUB_ENV"
+          echo "MUSIC_RECORD_DURATION=$DURATION" >> "$GITHUB_ENV"
+          echo "Rendering project: $PROJ"
+
+      - name: Install Csound and ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends csound ffmpeg
+
+      - name: Render WAV
+        run: |
+          MUSIC_PROJECT_DIR="$GITHUB_WORKSPACE/${{ env.PROJ }}" \
+          MUSIC_RECORD_PATH="$GITHUB_WORKSPACE/${{ env.PROJ }}/${{ env.PROJ }}_csound.wav" \
+          MUSIC_RECORD_DURATION="${{ env.MUSIC_RECORD_DURATION }}" \
+          timeout 10m bash scripts/render_csound.sh
+          test -s "${{ env.PROJ }}_csound.wav"
+        working-directory: ${{ github.workspace }}
+
+      - name: Convert WAV to MP3
+        run: |
+          ffmpeg -y -i ${{ env.PROJ }}_csound.wav -codec:a libmp3lame -q:a 2 ${{ env.PROJ }}_csound.mp3
+          test -s ${{ env.PROJ }}_csound.mp3
+          ffmpeg -i ${{ env.PROJ }}_csound.wav -af volumedetect -f null - 2> volume.log
+          if grep -q "max_volume: -inf" volume.log; then
+            echo "error: rendered audio appears to be silent" >&2
+            cat volume.log
+            exit 1
+          fi
+        working-directory: ${{ github.workspace }}/${{ env.PROJ }}
+
+      - name: Show audio metadata
+        run: |
+          ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 ${{ env.PROJ }}_csound.wav
+          ffprobe -v error -show_entries format=format_name,duration,size,bit_rate -of default=noprint_wrappers=1 ${{ env.PROJ }}_csound.mp3
+        working-directory: ${{ github.workspace }}/${{ env.PROJ }}
+
+      - name: Upload rendered audio
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROJ }}-csound-audio
+          path: |
+            ${{ env.PROJ }}/${{ env.PROJ }}_csound.wav
+            ${{ env.PROJ }}/${{ env.PROJ }}_csound.mp3
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Attach audio to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes
+          gh release upload "$TAG" "${{ env.PROJ }}"/${{ env.PROJ }}_csound.wav "${{ env.PROJ }}"/${{ env.PROJ }}_csound.mp3 --clobber

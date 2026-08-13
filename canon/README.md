@@ -39,9 +39,43 @@ For a short test render:
 MUSIC_RECORD_DURATION=5 MUSIC_RECORD_PATH=canon_test.wav sclang export_wav.scd
 ```
 
+## Csound
+
+Csound arrangement of Canon in D for:
+
+- soft piano
+- violin
+- viola
+- cello
+
+`main.csd` is a single self-contained file: note tables (MIDI) + a scheduler
+instrument that schedules every event, plus the instrument definitions and a
+master reverb bus. To render a WAV (csound must be on PATH):
+
+```bash
+cd canon
+csound --smacro:DURATION=137.2 -o canon_csound.wav main.csd
+```
+
+The `DURATION` macro defaults to 137.2 s inside the file, so a plain
+`csound -o canon_csound.wav main.csd` works too. Use the shared script for
+project-aware rendering:
+
+```bash
+MUSIC_PROJECT_DIR=canon MUSIC_RECORD_PATH=canon/canon_csound.wav \
+  bash scripts/render_csound.sh
+```
+
+For a short test render:
+
+```bash
+MUSIC_PROJECT_DIR=canon MUSIC_RECORD_DURATION=5 MUSIC_RECORD_PATH=/tmp/canon_test.wav \
+  bash scripts/render_csound.sh
+```
+
 ## GitHub Actions
 
-Both workflows resolve the project name from the pushed tag
+All workflows resolve the project name from the pushed tag
 (`<project>-<version>`, e.g. `canon-1.0.0`) or from the `project` input when
 run manually. Project names may only contain letters, digits and underscores;
 versions must be plain dotted numbers (no `-beta` suffixes). Artifacts and
@@ -68,4 +102,14 @@ and `MUSIC_RECORD_PATH` control the project directory, recording length
 the GitHub Release.
 
 Run it from the Actions tab with **Render Strudel** > **Run workflow**
+(project: `canon`), or push a version tag such as `canon-1.0.0`.
+
+### Csound Render
+
+The workflow in `../.github/workflows/csound.yml` renders `canon_csound.wav`
+from `main.csd` with non-realtime Csound, converts it to `canon_csound.mp3`,
+and uploads both files as the `canon-csound-audio` artifact. On tag pushes it
+also attaches both files to the GitHub Release.
+
+Run it from the Actions tab with **Render Csound** > **Run workflow**
 (project: `canon`), or push a version tag such as `canon-1.0.0`.

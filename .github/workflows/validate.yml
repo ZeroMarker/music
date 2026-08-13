@@ -43,3 +43,31 @@ jobs:
             cat volume.log
             exit 1
           fi
+
+  csound-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        project: [canon, liangzhu]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Csound and ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends csound ffmpeg
+      - name: Read smoke-test duration
+        run: echo "MUSIC_RECORD_DURATION=$(jq -er '.smokeDurationSeconds' '${{ matrix.project }}/project.json')" >> "$GITHUB_ENV"
+      - name: Render short Csound sample
+        env:
+          MUSIC_PROJECT_DIR: ${{ github.workspace }}/${{ matrix.project }}
+          MUSIC_RECORD_PATH: ${{ runner.temp }}/${{ matrix.project }}-smoke.wav
+        run: bash scripts/render_csound.sh
+      - name: Reject missing or silent audio
+        run: |
+          test -s "${{ runner.temp }}/${{ matrix.project }}-smoke.wav"
+          ffmpeg -i "${{ runner.temp }}/${{ matrix.project }}-smoke.wav" -af volumedetect -f null - 2> volume.log
+          if grep -q "max_volume: -inf" volume.log; then
+            cat volume.log
+            exit 1
+          fi
