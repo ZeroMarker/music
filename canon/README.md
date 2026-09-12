@@ -3,8 +3,8 @@
 ## Strudel (browser)
 
 Run `npm ci` in the repository root, then open `strudel.html` in a browser and
-click **Play**. Uses built-in
-synthesizers (triangle for piano, sawtooth for violin) via Strudel's
+click **Play**. The browser arrangement includes piano, violin, viola, and
+cello, using Strudel's built-in triangle and sawtooth synthesizers through the
 Web Audio engine.
 
 ## SuperCollider

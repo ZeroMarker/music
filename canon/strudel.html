@@ -9,11 +9,13 @@
 body { background: #1a1a2e; color: #e0e0e0; font-family: 'Courier New', monospace; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 2rem; }
 h1 { font-size: 1.6rem; margin-bottom: 0.5rem; color: #c9a0dc; }
 p.sub { font-size: 0.85rem; color: #888; margin-bottom: 1.5rem; }
-#controls { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
-button { background: #16213e; color: #e0e0e0; border: 1px solid #c9a0dc; padding: 0.6rem 1.8rem; font-family: inherit; font-size: 1rem; cursor: pointer; border-radius: 4px; transition: background 0.2s; }
+#controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-bottom: 1.5rem; }
+button { min-width: 8rem; background: #16213e; color: #e0e0e0; border: 1px solid #c9a0dc; padding: 0.6rem 1.8rem; font-family: inherit; font-size: 1rem; cursor: pointer; border-radius: 4px; transition: background 0.2s; }
 button:hover { background: #0f3460; }
+button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+button:disabled { cursor: wait; opacity: 0.55; }
 button.active { background: #c9a0dc; color: #1a1a2e; }
-#log { width: 100%; max-width: 720px; background: #0f0f1e; border: 1px solid #333; border-radius: 4px; padding: 1rem; font-size: 0.8rem; height: 220px; overflow-y: auto; white-space: pre-wrap; color: #aaa; }
+#log { width: 100%; max-width: 720px; background: #0f0f1e; border: 1px solid #333; border-radius: 4px; padding: 1rem; font-size: 0.8rem; min-height: 4rem; max-height: 220px; overflow-y: auto; white-space: pre-wrap; color: #aaa; }
 </style>
 </head>
 <body>
@@ -22,10 +24,10 @@ button.active { background: #c9a0dc; color: #1a1a2e; }
 <p class="sub">Strudel — Pachelbel</p>
 
 <div id="controls">
-  <button id="btnPlay" disabled>▶ Play</button>
-  <button id="btnStop" disabled>■ Stop</button>
+  <button id="btnPlay" type="button" disabled aria-pressed="false">▶ Play</button>
+  <button id="btnStop" type="button" disabled>■ Stop</button>
 </div>
-<div id="log">Loading...</div>
+<div id="log" role="status" aria-live="polite">Loading...</div>
 
 <script src="../node_modules/@strudel/web/dist/index.js"></script>
 <script>
@@ -36,79 +38,115 @@ const log = (msg) => {
 };
 
 const canonCode = `
-const pianoL = note("<d3 a2 b2 f#2 g2 d3 g2 a2>*2")
+// One Strudel cycle is four beats. Each harmony group contains two chords,
+// keeping the arrangement aligned with the two-beat changes in the other engines.
+const pianoL = note("<[d3 a2] [b2 f#2] [g2 d3] [g2 a2]>")
   .sound('triangle')
-  .gain(0.2)
-  .lpf(800)
-  .decay(0.15).sustain(0).release(0.1)
-  .room(0.2)
+  .gain(0.16)
+  .lpf(1100)
+  .decay(0.22).sustain(0.08).release(0.35)
+  .pan(0.38)
+  .room(0.24)
 
 const pianoR = note(\`<
-  [d4 a4 f#5 a4 f#4 a4 d5 a4]
-  [a3 e4 c#5 e4 c#4 e4 a4 e4]
-  [b3 f#4 d5 f#4 d4 f#4 b4 f#4]
-  [f#3 c#4 a4 c#4 a3 c#4 f#4 c#4]
-  [g3 d4 b4 d4 b3 d4 g4 d4]
-  [d4 a4 f#5 a4 f#4 a4 d5 a4]
-  [g3 d4 b4 d4 b3 d4 g4 d4]
-  [a3 e4 c#5 e4 c#4 e4 a4 e4]
->*2\`)
+  [[d4 a4 f#5 a4 f#4 a4 d5 a4] [a3 e4 c#5 e4 c#4 e4 a4 e4]]
+  [[b3 f#4 d5 f#4 d4 f#4 b4 f#4] [f#3 c#4 a4 c#4 a3 c#4 f#4 c#4]]
+  [[g3 d4 b4 d4 b3 d4 g4 d4] [d4 a4 f#5 a4 f#4 a4 d5 a4]]
+  [[g3 d4 b4 d4 b3 d4 g4 d4] [a3 e4 c#5 e4 c#4 e4 a4 e4]]
+>\`)
   .sound('triangle')
-  .gain(0.1)
-  .lpf(2000)
-  .decay(0.12).sustain(0).release(0.08)
-  .room(0.15)
+  .gain(0.075)
+  .lpf(2400)
+  .decay(0.16).sustain(0.04).release(0.2)
+  .pan(0.5)
+  .room(0.2)
+
+const cello = note("<[d2 a1] [b1 f#1] [g1 d2] [g1 a1]>")
+  .sound('sawtooth')
+  .gain(0.055)
+  .lpf(650)
+  .attack(0.16).decay(0.35).sustain(0.55).release(0.65)
+  .vib(4.7).vibmod(0.045)
+  .pan(0.27)
+  .room(0.3)
+
+const viola = note(\`<
+  [[a3 d4 f#4 d4] [e3 a3 c#4 a3]]
+  [[f#3 b3 d4 b3] [d3 f#3 a3 f#3]]
+  [[d3 g3 b3 g3] [a3 d4 f#4 d4]]
+  [[d3 g3 b3 g3] [e3 a3 c#4 a3]]
+>\`)
+  .sound('sawtooth')
+  .gain(0.032)
+  .lpf(1300)
+  .attack(0.1).decay(0.2).sustain(0.42).release(0.28)
+  .vib(5).vibmod(0.055)
+  .pan(0.58)
+  .room(0.32)
 
 const violin = note(\`<
-  [f#4 e4 f#4 d4 c#4 e4 d4 c#4 d4 e4 f#4 d4 c#4 d4 e4 c#4]
-  [d4 e4 f#4 a4 g4 f#4 e4 d4 e4 f#4 g4 b4 a4 g4 f#4 e4]
-  [f#4 g4 a4 b4 c#5 a4 b4 g4 f#4 g4 a4 d4 c#4 e4 d4 c#4]
-  [a3 d4 e4 f#4 g4 e4 f#4 d4 e4 f#4 g4 b4 c#5 g4 b4 f#4]
->*2\`)
+  [d5 c#5 d5 f#4 a4 b4 c#5 a4 b4 c#5 d5 b4 a4 f#4 a4 d4]
+  [d4 f#4 a4 d5 c#5 a4 f#4 d4 e4 g4 b4 e5 d5 b4 g4 e4]
+  [a4 b4 c#5 d5 e5 c#5 d5 b4 a4 b4 c#5 f#4 a4 g4 f#4 d4]
+  [a3 d4 f#4 a4 b4 f#4 a4 d4 e4 a4 c#5 e5 f#5 c#5 e5 a4]
+>\`).slow(2)
   .sound('sawtooth')
-  .gain(0.05)
-  .lpf(1800)
-  .attack(0.08).decay(0.5).sustain(0.4).release(0.4)
-  .vib(5).vibmod(0.1)
-  .room(0.35)
+  .gain(0.042)
+  .lpf(2300)
+  .attack(0.09).decay(0.35).sustain(0.48).release(0.42)
+  .vib(5.1).vibmod(0.075)
+  .pan(0.69)
+  .room(0.38)
 
-stack(pianoL, pianoR, violin)
+stack(pianoL, pianoR, cello, viola, violin)
+  .postgain(3)
+  .cpm(84 / 4)
 `;
 
 let playing = false;
 window.playCanon = () => evaluate(canonCode);
 
-window.addEventListener('load', async () => {
-  await initStrudel();
-  try { setcpm(84/4); } catch(e) {}
+const setPlaying = (value) => {
+  playing = value;
+  const btnPlay = document.getElementById('btnPlay');
+  btnPlay.textContent = value ? '⏸ Pause' : '▶ Play';
+  btnPlay.classList.toggle('active', value);
+  btnPlay.setAttribute('aria-pressed', String(value));
+};
 
+window.addEventListener('load', async () => {
   const btnPlay = document.getElementById('btnPlay');
   const btnStop = document.getElementById('btnStop');
-  btnPlay.disabled = false;
-  btnStop.disabled = false;
-  log('Ready.');
+  try {
+    await initStrudel();
+    btnPlay.disabled = false;
+    btnStop.disabled = false;
+    logEl.textContent = 'Ready — piano, violin, viola, and cello.';
+  } catch (error) {
+    logEl.textContent = 'Unable to initialize audio: ' + error.message;
+    return;
+  }
 
   btnPlay.addEventListener('click', async () => {
     if (!playing) {
       log('Playing...');
-      await window.playCanon();
-      playing = true;
-      btnPlay.textContent = '⏸ Pause';
-      btnPlay.classList.add('active');
+      try {
+        await window.playCanon();
+        setPlaying(true);
+      } catch (error) {
+        setPlaying(false);
+        log('Playback failed: ' + error.message);
+      }
     } else {
       hush();
-      playing = false;
-      btnPlay.textContent = '▶ Play';
-      btnPlay.classList.remove('active');
+      setPlaying(false);
       log('Paused.');
     }
   });
 
   btnStop.addEventListener('click', () => {
     hush();
-    playing = false;
-    btnPlay.textContent = '▶ Play';
-    btnPlay.classList.remove('active');
+    setPlaying(false);
     log('Stopped.');
   });
 });

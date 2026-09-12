@@ -110,11 +110,11 @@ loop_vln_i:
 endin
 
 ; ---------------- soft piano ----------------
-; p4 midi note, p5 amp, p6 pan
+; p4 midi note, p5 amp, p6 pan (-1 left, +1 right)
 instr 10
   ifreq = cpsmidinn(p4)
   iamp = p5
-  ipan = p6
+  ipan = (p6 + 1) * 0.5
   ; hammer transient (filtered noise)
   aclick = butterbp(rand(0.8), 2500, 1400)
   aclick = aclick * expseg(1, 0.005, 0.001, 0.04, 0.0001)
@@ -131,12 +131,15 @@ instr 10
 endin
 
 ; ---------------- bowed string ----------------
-; p4 midi note, p5 amp, p6 pan, p7 attack, p8 bright, p9 body resonance, p10 vibrato
+; p4 midi note, p5 amp, p6 pan (-1 left, +1 right), p7 attack,
+; p8 bright, p9 body resonance, p10 vibrato
 instr 11
   ifreq = cpsmidinn(p4)
   iamp = p5
-  ipan = p6
-  iatt = p7
+  ipan = (p6 + 1) * 0.5
+  ; Keep the release segment valid for truncated smoke-test notes.
+  iatt = min(p7, p3 * 0.35)
+  irel = min(0.06, p3 * 0.2)
   ibright = p8
   ibody = p9
   ivib = p10
@@ -145,7 +148,7 @@ instr 11
   asig = butterlp(asig, acut)
   ares = butterbp(asig, ibody, ibody * 0.3) * 0.16
   asig = asig + ares
-  aenv = linseg(0, iatt, 1, p3 - iatt, 0.72, 0.06, 0)
+  aenv = linseg(0, iatt, 1, max(0.001, p3 - iatt - irel), 0.72, irel, 0)
   asig = asig * aenv
   aL, aR pan2 asig, ipan
   gaDryL = gaDryL + aL
