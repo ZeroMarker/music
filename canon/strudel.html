@@ -38,69 +38,114 @@ const log = (msg) => {
 };
 
 const canonCode = `
-// One Strudel cycle is four beats. Each harmony group contains two chords,
-// keeping the arrangement aligned with the two-beat changes in the other engines.
-const pianoL = note("<[d3 a2] [b2 f#2] [g2 d3] [g2 a2]>")
-  .sound('triangle')
-  .gain(0.16)
-  .lpf(1100)
-  .decay(0.22).sustain(0.08).release(0.35)
-  .pan(0.38)
-  .room(0.24)
+// Canon in D — score data shared with canon/main.scd (SuperCollider) and
+// canon/main.csd (Csound): one 16-beat harmonic cycle of eight chords
+// (D A Bm F#m G D G A) at 84 BPM, with a four-phrase canon melody on top.
 
-const pianoR = note(\`<
-  [[d4 a4 f#5 a4 f#4 a4 d5 a4] [a3 e4 c#5 e4 c#4 e4 a4 e4]]
-  [[b3 f#4 d5 f#4 d4 f#4 b4 f#4] [f#3 c#4 a4 c#4 a3 c#4 f#4 c#4]]
-  [[g3 d4 b4 d4 b3 d4 g4 d4] [d4 a4 f#5 a4 f#4 a4 d5 a4]]
-  [[g3 d4 b4 d4 b3 d4 g4 d4] [a3 e4 c#5 e4 c#4 e4 a4 e4]]
->\`)
+const progression = [
+  [50, 57, 62, 66], // D
+  [45, 52, 57, 61], // A
+  [47, 54, 59, 62], // Bm
+  [42, 50, 54, 57], // F#m
+  [43, 50, 55, 59], // G
+  [50, 57, 62, 66], // D
+  [43, 50, 55, 59], // G
+  [45, 52, 57, 61]  // A
+];
+
+// The canon melody: four 8-beat phrases (64 eighth notes = two harmonic
+// cycles), identical to canonA..canonD in the other engines.
+const canonA = [74, 73, 74, 66, 69, 71, 73, 69, 71, 73, 74, 71, 69, 66, 69, 62];
+const canonB = [62, 66, 69, 74, 73, 69, 66, 62, 64, 67, 71, 76, 74, 71, 67, 64];
+const canonC = [69, 71, 73, 74, 76, 73, 74, 71, 69, 71, 73, 66, 69, 67, 66, 62];
+const canonD = [57, 62, 66, 69, 71, 66, 69, 62, 64, 69, 73, 76, 78, 73, 76, 69];
+const melody = canonA.concat(canonB, canonC, canonD);
+
+// Derived lines, computed once from the progression (like the other engines).
+const roots = progression.map(chord => chord[0]);
+const bass = roots.map(root => root - 12);
+const violaLine = progression.reduce(
+  (line, chord) => line.concat([chord[1], chord[2], chord[3], chord[2]]),
+  []
+);
+const arpeggio = progression.reduce(
+  (line, chord) => line.concat([
+    chord[0] + 12, chord[1] + 12, chord[2] + 12, chord[3] + 12,
+    chord[2] + 12, chord[1] + 12, chord[2] + 12, chord[3] + 12
+  ]),
+  []
+);
+
+// Spread MIDI notes evenly over a number of cycles (fastcat crams them into
+// one cycle, slow spreads that over the given cycles). One cycle is four
+// beats, so phrase(roots, 4) changes chord every two beats and
+// phrase(melody, 8) plays eighth notes across two harmonic cycles.
+const phrase = (notes, cycles) => fastcat(...notes.map(n => note(n))).slow(cycles);
+
+// Entrance staging: the bass starts alone, the inner voices join on the
+// second harmonic cycle, the melody on the third — each entry lands on the
+// D chord that begins a cycle.
+const fromCycle = cycle => signal(t => (t >= cycle ? 1 : 0));
+
+// Small per-note level variation (±10 %) instead of machine-flat velocities.
+const level = base => rand.range(base * 0.9, base * 1.1);
+
+const pianoL = phrase(roots, 4)
   .sound('triangle')
-  .gain(0.075)
-  .lpf(2400)
-  .decay(0.16).sustain(0.04).release(0.2)
-  .pan(0.5)
+  .gain(level(0.16))
+  .lpf(1300)
+  .attack(0.004).decay(0.35).sustain(0.1).release(0.5)
+  .pan(0.4)
+  .room(0.22)
+
+const pianoR = phrase(arpeggio, 4).mask(fromCycle(4))
+  .sound('triangle')
+  .gain(level(0.065))
+  .lpf(2600)
+  .attack(0.003).decay(0.2).sustain(0.05).release(0.25)
+  .pan(rand.range(0.44, 0.56))
   .room(0.2)
 
-const cello = note("<[d2 a1] [b1 f#1] [g1 d2] [g1 a1]>")
+const cello = phrase(bass, 4)
   .sound('sawtooth')
-  .gain(0.055)
-  .lpf(650)
-  .attack(0.16).decay(0.35).sustain(0.55).release(0.65)
-  .vib(4.7).vibmod(0.045)
-  .pan(0.27)
+  .gain(level(0.145))
+  .lpf(700)
+  .attack(0.2).decay(0.4).sustain(0.62).release(0.7)
+  .vib(5).vibmod(0.12)
+  .pan(0.3)
   .room(0.3)
 
-const viola = note(\`<
-  [[a3 d4 f#4 d4] [e3 a3 c#4 a3]]
-  [[f#3 b3 d4 b3] [d3 f#3 a3 f#3]]
-  [[d3 g3 b3 g3] [a3 d4 f#4 d4]]
-  [[d3 g3 b3 g3] [e3 a3 c#4 a3]]
->\`)
+const viola = phrase(violaLine, 4).mask(fromCycle(4))
   .sound('sawtooth')
-  .gain(0.032)
-  .lpf(1300)
-  .attack(0.1).decay(0.2).sustain(0.42).release(0.28)
-  .vib(5).vibmod(0.055)
+  .gain(level(0.08))
+  .lpf(1500)
+  .attack(0.12).decay(0.3).sustain(0.75).release(0.35)
+  .vib(5.1).vibmod(0.14)
   .pan(0.58)
   .room(0.32)
 
-const violin = note(\`<
-  [d5 c#5 d5 f#4 a4 b4 c#5 a4 b4 c#5 d5 b4 a4 f#4 a4 d4]
-  [d4 f#4 a4 d5 c#5 a4 f#4 d4 e4 g4 b4 e5 d5 b4 g4 e4]
-  [a4 b4 c#5 d5 e5 c#5 d5 b4 a4 b4 c#5 f#4 a4 g4 f#4 d4]
-  [a3 d4 f#4 a4 b4 f#4 a4 d4 e4 a4 c#5 e5 f#5 c#5 e5 a4]
->\`).slow(2)
+const violin = phrase(melody, 8).mask(fromCycle(8))
   .sound('sawtooth')
-  .gain(0.042)
-  .lpf(2300)
-  .attack(0.09).decay(0.35).sustain(0.48).release(0.42)
-  .vib(5.1).vibmod(0.075)
-  .pan(0.69)
-  .room(0.38)
+  .gain(level(0.115))
+  .lpf(2600)
+  .attack(0.1).decay(0.35).sustain(0.78).release(0.5)
+  .vib(5.3).vibmod(0.17)
+  .pan(0.68)
+  .room(0.36)
+
+// Tempo: @strudel/web schedules at cps = 0.5, i.e. one cycle lasts two
+// seconds. Scale the pattern so a four-beat cycle lasts 4 * 60 / 84 s and
+// the piece runs at the project's 84 BPM instead of half speed.
+const cycleSeconds = 4 * 60 / 84;
+
+// Master envelope: full level until cycle 46.5, then a linear fade that is
+// silent from cycle 47.5 (135.7 s) onward, so only the reverb tail remains
+// when the 137.2 s recording of project.json stops.
+const master = signal(t => 2.6 * (t < 46.5 ? 1 : Math.max(0, 47.5 - t)));
 
 stack(pianoL, pianoR, cello, viola, violin)
-  .postgain(3)
-  .cpm(84 / 4)
+  .postgain(master)
+  .fast(2 / cycleSeconds)
 `;
 
 let playing = false;
@@ -121,7 +166,7 @@ window.addEventListener('load', async () => {
     await initStrudel();
     btnPlay.disabled = false;
     btnStop.disabled = false;
-    logEl.textContent = 'Ready — piano, violin, viola, and cello.';
+    logEl.textContent = 'Ready — piano, violin, viola, and cello (84 BPM).';
   } catch (error) {
     logEl.textContent = 'Unable to initialize audio: ' + error.message;
     return;

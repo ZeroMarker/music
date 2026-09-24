@@ -3,9 +3,21 @@
 ## Strudel (browser)
 
 Run `npm ci` in the repository root, then open `strudel.html` in a browser and
-click **Play**. The browser arrangement includes piano, violin, viola, and
-cello, using Strudel's built-in triangle and sawtooth synthesizers through the
-Web Audio engine.
+click **Play**. The browser arrangement uses piano, violin, viola, and cello
+through Strudel's built-in triangle and sawtooth synthesizers on the Web Audio
+engine.
+
+The score data (the eight-chord progression and the four canon phrases) is
+generated from the same tables as `main.scd` and `main.csd`, so the piece runs
+at the project's 84 BPM and stays aligned with the other engines. The
+arrangement builds up in stages — bass alone first, inner voices from the
+second harmonic cycle, melody from the third — gets a small per-note level
+variation, and fades out over the final cycle to end cleanly at the 137.2 s
+render length.
+
+`npm run check` evaluates the pattern offline (no browser needed) before any
+headless render, so syntax or structure errors in `strudel.html` fail fast in
+CI.
 
 ## SuperCollider
 

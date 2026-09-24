@@ -62,7 +62,7 @@
 
 先运行 `npm ci`，再打开项目的 `strudel.html` 并点击 **Play**。例如：
 
-- `canon/strudel.html`：钢琴与小提琴版《D 大调卡农》
+- `canon/strudel.html`：钢琴、小提琴、中提琴与大提琴四声部的《D 大调卡农》
 - `liangzhu/strudel.html`：五声音阶原创作品《化蝶清梦》
 
 ### SuperCollider（本地）
@@ -103,13 +103,14 @@ npm run render:strudel
 `MUSIC_RECORD_DURATION` 覆盖。旧的 `CANON_*` 变量仍兼容。Strudel 浏览器包由
 npm 锁定并从本地提供，自动渲染不依赖第三方 CDN。
 
-自动发现并检查全部项目：
+自动发现并检查全部项目（项目元数据 + 离线求值每个 `strudel.html` 的
+Pattern，乐谱有语法或结构错误会在无头渲染前失败）：
 
 ```bash
 npm run check
 ```
 
-也可以只检查指定项目：`npm run check -- liangzhu`。
+也可以只检查指定项目的元数据：`npm run check -- liangzhu`。
 
 ### 命令行渲染 Csound（需要 Csound 6+）
 
@@ -162,7 +163,12 @@ csound --smacro:DURATION=8 -o canon_csound.wav main.csd
 
 | 作品 | 版本 | 音频 |
 | --- | --- | --- |
+| D 大调卡农（Canon in D） | [`canon-1.1.0`](https://github.com/ZeroMarker/music/releases/tag/canon-1.1.0) | [WAV 母版](https://github.com/ZeroMarker/music/releases/download/canon-1.1.0/canon.wav) · [SuperCollider MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.1.0/canon.mp3) · [Csound MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.1.0/canon_csound.mp3) · [Strudel MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.1.0/canon_strudel.mp3) |
 | 化蝶清梦（Butterfly Lovers · Reverie） | [`liangzhu-1.0.1`](https://github.com/ZeroMarker/music/releases/tag/liangzhu-1.0.1) | [WAV 母版](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu.wav) · [SuperCollider MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu.mp3) · [Strudel MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu_strudel.mp3) |
+
+卡农 `1.1.0` 修正了 Strudel 版的半速问题（此前实为 42 BPM，现与 project.json
+及其他引擎一致为 84 BPM），并加入分声部进入、随机力度与结尾淡出；
+`npm run check` 起会在渲染前离线求值全部 Strudel 乐谱。
 
 梁祝项目以 `1.0.1` 为首个完整双引擎版本；`1.0.0` 仅生成了 Strudel 资产，
 不建议作为完整版本使用。
