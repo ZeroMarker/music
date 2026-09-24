@@ -50,7 +50,7 @@ jobs:
             echo "error: unknown project '$PROJ'" >&2
             exit 1
           fi
-          npm run check -- "$PROJ"
+          node scripts/validate_projects.mjs "$PROJ"
           DURATION="$(jq -er '.renderDurationSeconds | select(type == "number" and . > 0)' "$PROJ/project.json")"
           echo "PROJ=$PROJ" >> "$GITHUB_ENV"
           echo "MUSIC_RECORD_DURATION=$DURATION" >> "$GITHUB_ENV"
@@ -64,6 +64,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Check project and Strudel patterns
+        run: npm run check -- "$PROJ"
 
       - name: Render audio
         env:
