@@ -5,11 +5,15 @@
 
 ## 下载
 
-当前完整版本：[`liangzhu-1.0.1`](https://github.com/ZeroMarker/music/releases/tag/liangzhu-1.0.1)
+当前完整版本：[`liangzhu-1.1.0`](https://github.com/ZeroMarker/music/releases/tag/liangzhu-1.1.0)
 
-- [liangzhu.wav](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu.wav) — SuperCollider 无损母版
-- [liangzhu.mp3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu.mp3) — SuperCollider MP3
-- [liangzhu_strudel.mp3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu_strudel.mp3) — Strudel 网页版 MP3
+- [liangzhu.wav](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.1.0/liangzhu.wav) — SuperCollider 无损母版
+- [liangzhu.mp3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.1.0/liangzhu.mp3) — SuperCollider MP3
+- [liangzhu_strudel.mp3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.1.0/liangzhu_strudel.mp3) — Strudel 网页版 MP3
+- [liangzhu_csound.wav](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.1.0/liangzhu_csound.wav) — Csound 无损版
+- [liangzhu_csound.mp3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.1.0/liangzhu_csound.mp3) — Csound MP3
+
+`1.1.0` 重做编曲，统一三套引擎的有限乐谱，并修正声像、包络和拨弦泛音力度。
 
 `1.0.0` 只包含 Strudel 资产；SuperCollider 语法问题已在 `1.0.1` 修复，
 请使用 `1.0.1` 或更新版本。
@@ -86,8 +90,8 @@ bash scripts/render_csound.sh
 与 Csound WAV/MP3，并上传至同一个 GitHub Release：
 
 ```bash
-git tag -a liangzhu-1.0.2 -m "Liangzhu 1.0.2"
-git push origin liangzhu-1.0.2
+git tag -a liangzhu-1.1.0 -m "Liangzhu 1.1.0"
+git push origin liangzhu-1.1.0
 ```
 
 发布前可执行 `npm run check -- liangzhu`，并用短时渲染检查网页音频。

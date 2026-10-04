@@ -1,5 +1,8 @@
 # canon
 
+Current release: [canon-1.2.0](https://github.com/ZeroMarker/music/releases/tag/canon-1.2.0).
+Includes SuperCollider and Csound WAV/MP3 plus Strudel MP3.
+
 ## Strudel (browser)
 
 Run `npm ci` in the repository root, then open `strudel.html` in a browser and

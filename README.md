@@ -42,7 +42,7 @@
 
 ## 重做编排
 
-当前工作树中的两首作品已重新编排，下载表中的 Release 仍是旧版本。
+两首作品已重新编排，版本分别为卡农 `1.2.0` 和《化蝶清梦》`1.1.0`。
 卡农采用逐层进入、中段减奏和 D 大调终止式；《化蝶清梦》采用洞箫与二胡
 交替领奏、长短句和主音收尾。三套引擎从同一份有限乐谱生成，速度分别为
 84 BPM 和 72 BPM，渲染时长包含自然尾音。
@@ -175,8 +175,8 @@ csound --smacro:DURATION=8 -o canon_csound.wav main.csd
 
 | 作品 | 版本 | 音频 |
 | --- | --- | --- |
-| D 大调卡农（Canon in D） | [`canon-1.1.0`](https://github.com/ZeroMarker/music/releases/tag/canon-1.1.0) | [WAV 母版](https://github.com/ZeroMarker/music/releases/download/canon-1.1.0/canon.wav) · [SuperCollider MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.1.0/canon.mp3) · [Csound MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.1.0/canon_csound.mp3) · [Strudel MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.1.0/canon_strudel.mp3) |
-| 化蝶清梦（Butterfly Lovers · Reverie） | [`liangzhu-1.0.1`](https://github.com/ZeroMarker/music/releases/tag/liangzhu-1.0.1) | [WAV 母版](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu.wav) · [SuperCollider MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu.mp3) · [Strudel MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.0.1/liangzhu_strudel.mp3) |
+| D 大调卡农（Canon in D） | [`canon-1.2.0`](https://github.com/ZeroMarker/music/releases/tag/canon-1.2.0) | [WAV 母版](https://github.com/ZeroMarker/music/releases/download/canon-1.2.0/canon.wav) · [SuperCollider MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.2.0/canon.mp3) · [Csound MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.2.0/canon_csound.mp3) · [Strudel MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.2.0/canon_strudel.mp3) |
+| 化蝶清梦（Butterfly Lovers · Reverie） | [`liangzhu-1.1.0`](https://github.com/ZeroMarker/music/releases/tag/liangzhu-1.1.0) | [WAV 母版](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.1.0/liangzhu.wav) · [SuperCollider MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.1.0/liangzhu.mp3) · [Strudel MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.1.0/liangzhu_strudel.mp3) · [Csound MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.1.0/liangzhu_csound.mp3) |
 
 卡农 `1.1.0` 修正了 Strudel 版的半速问题（此前实为 42 BPM，现与 project.json
 及其他引擎一致为 84 BPM），并加入分声部进入、随机力度与结尾淡出；
