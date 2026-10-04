@@ -5,7 +5,8 @@
   "scripts": {
     "check": "node --check scripts/render_strudel.mjs && node scripts/check_strudel_pattern.mjs && node scripts/validate_projects.mjs",
     "render:strudel": "node scripts/render_strudel.mjs",
-    "render:csound": "bash scripts/render_csound.sh"
+    "render:csound": "bash scripts/render_csound.sh",
+    "rebuild:music": "node scripts/rebuild_scores.mjs"
   },
   "devDependencies": {
     "@strudel/web": "1.0.3",

@@ -40,6 +40,18 @@
 └── package.json                  # npm 脚本（Puppeteer 录制）
 ```
 
+## 重做编排
+
+当前工作树中的两首作品已重新编排，下载表中的 Release 仍是旧版本。
+卡农采用逐层进入、中段减奏和 D 大调终止式；《化蝶清梦》采用洞箫与二胡
+交替领奏、长短句和主音收尾。三套引擎从同一份有限乐谱生成，速度分别为
+84 BPM 和 72 BPM，渲染时长包含自然尾音。
+
+```bash
+npm run rebuild:music           # 从 scripts/rebuild_scores.mjs 生成三套乐谱
+npm run check                   # 检查全曲及停止后的静音
+```
+
 ## 添加新项目
 
 每个项目一个目录（如 `canon/`），包含：

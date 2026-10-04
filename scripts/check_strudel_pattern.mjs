@@ -45,6 +45,9 @@ const checkValue = (value, where) => {
     if (typeof entry === 'number' && !Number.isFinite(entry)) {
       throw new Error(`${where}: control "${key}" is not a finite number (${entry})`);
     }
+    if (key === 'note' && typeof entry === 'string' && !Number.isFinite(Number(entry)) && !/^[a-g][#b]?-?\d+$/i.test(entry)) {
+      throw new Error(`${where}: invalid pitched note ${entry}; use a silence pattern for rests`);
+    }
     if (key === 'note' && typeof entry === 'number' && (entry < 0 || entry > 127)) {
       throw new Error(`${where}: note ${entry} is outside the MIDI range`);
     }
@@ -71,10 +74,12 @@ for (const projectName of projectNames) {
     throw new Error(`${file}: evaluated code did not return a pattern`);
   }
 
-  // Query eight cycles; enough to cover intro/build-up sections.
+  // Cover the full composition, including the final cadence.
+  const config = JSON.parse(await readFile(path.join(projectName, 'project.json'), 'utf8'));
+  const renderCycles = Math.ceil(config.renderDurationSeconds / 2);
   let eventCount = 0;
   let voiced = 0;
-  for (let begin = 0; begin < 8; begin++) {
+  for (let begin = 0; begin < renderCycles; begin++) {
     const haps = pattern.query(new State(new TimeSpan(begin, begin + 1)));
     for (const hap of haps) {
       eventCount++;
@@ -83,7 +88,12 @@ for (const projectName of projectNames) {
       if (!hap.whole) throw new Error(`${file}: event without a timespan at cycle ${begin}`);
     }
   }
-  if (!eventCount) throw new Error(`${file}: pattern is silent for the first 8 cycles`);
-  if (!voiced) throw new Error(`${file}: pattern has no note/sound events in the first 8 cycles`);
-  console.log(`Checked ${projectName} (${eventCount} events over 8 cycles)`);
+  if (!eventCount) throw new Error(`${file}: pattern is silent for the render duration`);
+  if (!voiced) throw new Error(`${file}: pattern has no note/sound events in the render duration`);
+  // Playback must end even when the browser keeps running after the capture.
+  const afterEnd = pattern.query(new State(new TimeSpan(renderCycles, renderCycles + 4)));
+  if (afterEnd.some(hap => hap.value?.note !== undefined && Number(hap.value?.gain ?? 1) > 0)) {
+    throw new Error(`${file}: notes continue beyond the configured render duration`);
+  }
+  console.log(`Checked ${projectName} (${eventCount} events over ${renderCycles} cycles; finite ending)`);
 }

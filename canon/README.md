@@ -7,17 +7,15 @@ click **Play**. The browser arrangement uses piano, violin, viola, and cello
 through Strudel's built-in triangle and sawtooth synthesizers on the Web Audio
 engine.
 
-The score data (the eight-chord progression and the four canon phrases) is
-generated from the same tables as `main.scd` and `main.csd`, so the piece runs
-at the project's 84 BPM and stays aligned with the other engines. The
-arrangement builds up in stages — bass alone first, inner voices from the
-second harmonic cycle, melody from the third — gets a small per-note level
-variation, and fades out over the final cycle to end cleanly at the 137.2 s
-render length.
+The arrangement is generated from `../scripts/rebuild_scores.mjs` for all three
+engines at 84 BPM. Piano and cello establish the ground, piano arpeggios join
+after 16 beats, then the melody and viola enter after 32 beats. A quieter middle
+section leads to the return, and a final D major chord begins at 125.71 s.
+The score ends at 128.57 s; the remaining render time preserves release tails.
 
-`npm run check` evaluates the pattern offline (no browser needed) before any
-headless render, so syntax or structure errors in `strudel.html` fail fast in
-CI.
+Run `npm run rebuild:music` from the repository root after editing the shared
+score. `npm run check` evaluates the entire browser score and verifies that it
+stops producing notes after the configured render duration.
 
 ## SuperCollider
 
