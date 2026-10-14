@@ -1,11 +1,12 @@
 # music — Code to Music
 
-用代码生成音乐的项目。每首作品通过三套技术方案实现，并可在 GitHub Actions
+用代码生成音乐的项目。每首作品通过四套技术方案实现，并可在 GitHub Actions
 上自动渲染音频产物。
 
 - **Strudel**：浏览器端音乐编程环境（Web Audio），适合网页播放与快速原型。
 - **SuperCollider**：原生音频平台，适合高质量合成、复杂配器和 WAV 母版。
 - **Csound**：经典音频语言，单文件 orchestra + score，纯命令行确定性渲染。
+- **MIDI + FluidSynth**：共享乐谱导出标准 MIDI，用 General MIDI SoundFont 秒级离线渲染真实乐器采样。
 
 详细的方案对比与选型建议见
 [CODE_TO_MUSIC_COMPARISON.md](CODE_TO_MUSIC_COMPARISON.md)。
@@ -19,6 +20,7 @@
 │   ├── main.scd                  # SuperCollider 编排（SynthDef + Pattern）
 │   ├── export_wav.scd            # SuperCollider 命令行 WAV 导出入口
 │   ├── main.csd                  # Csound 编排（orchestra + 调度器 + score）
+│   ├── score.mid                 # 标准 MIDI 乐谱（FluidSynth 渲染，也可导入 DAW / MuseScore）
 │   ├── project.json              # 项目名称、速度和渲染时长
 │   └── README.md                 # canon 使用说明
 ├── liangzhu/                     # 《化蝶清梦》原创五声音阶项目
@@ -31,12 +33,16 @@
 ├── scripts/
 │   ├── render_strudel.mjs        # 共享 Puppeteer 无头录制脚本（WebM）
 │   ├── render_csound.sh          # 共享 Csound 命令行渲染脚本（WAV）
+│   ├── render_fluidsynth.sh      # 共享 FluidSynth 命令行渲染脚本（WAV）
+│   ├── rebuild_scores.mjs        # 共享有限乐谱，生成四套引擎的乐谱
+│   ├── midi.mjs                  # 无依赖的标准 MIDI 文件写入器
 │   └── validate_projects.mjs     # 自动发现并校验项目结构与配置
 ├── .github/workflows/
 │   ├── strudel.yml               # CI：Strudel → MP3（按标签解析项目）
 │   ├── render.yml                # CI：SuperCollider → WAV + MP3（按标签解析项目）
 │   ├── csound.yml                # CI：Csound → WAV + MP3（按标签解析项目）
-│   └── validate.yml              # CI：全部项目的短时 Strudel/Csound 冒烟测试
+│   ├── fluidsynth.yml            # CI：MIDI + FluidSynth → WAV + MP3（按标签解析项目）
+│   └── validate.yml              # CI：全部项目的短时 Strudel/Csound/FluidSynth 冒烟测试
 └── package.json                  # npm 脚本（Puppeteer 录制）
 ```
 
@@ -44,11 +50,11 @@
 
 两首作品已重新编排，版本分别为卡农 `1.2.0` 和《化蝶清梦》`1.1.0`。
 卡农采用逐层进入、中段减奏和 D 大调终止式；《化蝶清梦》采用洞箫与二胡
-交替领奏、长短句和主音收尾。三套引擎从同一份有限乐谱生成，速度分别为
+交替领奏、长短句和主音收尾。四套引擎从同一份有限乐谱生成，速度分别为
 84 BPM 和 72 BPM，渲染时长包含自然尾音。
 
 ```bash
-npm run rebuild:music           # 从 scripts/rebuild_scores.mjs 生成三套乐谱
+npm run rebuild:music           # 从 scripts/rebuild_scores.mjs 生成四套乐谱（含 score.mid）
 npm run check                   # 检查全曲及停止后的静音
 ```
 
@@ -62,11 +68,11 @@ npm run check                   # 检查全曲及停止后的静音
 - `main.csd` — Csound 编排（`render_csound.sh` 会自动加载同目录的它）
 - `project.json` — 项目元数据、正式渲染时长和冒烟测试时长
 
-新项目可沿用三轨渲染，无需改动任何 workflow。**项目目录名**只能包含字母、
+新项目可沿用多轨渲染，无需改动任何 workflow。**项目目录名**只能包含字母、
 数字和下划线（如 `canon`、`bach_partita`），发布时推送
 **`<项目目录名>-<版本号>`** 标签（如 `canon-1.0.0`）：标签中的 `-` 是唯一
 分隔符，版本号为纯数字点分形式（`1.0.0`，**不带** `-beta` 等预发布后缀）。
-三个 workflow 会自动从标签解析项目名并渲染，格式非法时快速失败。
+各 workflow 会自动从标签解析项目名并渲染，格式非法时快速失败。
 
 ## 快速开始
 
@@ -95,6 +101,16 @@ sclang export_wav.scd            # 默认输出 canon.wav（137.2 秒）
 ```bash
 MUSIC_RECORD_PATH=canon_test.wav MUSIC_RECORD_DURATION=5 sclang export_wav.scd
 ```
+
+### MIDI + FluidSynth（命令行）
+
+```bash
+sudo apt-get install fluidsynth fluid-soundfont-gm ffmpeg
+npm run render:fluidsynth        # 默认输出 canon/canon_fluidsynth.wav，秒级完成
+MUSIC_PROJECT_DIR=liangzhu MUSIC_SOUNDFONT=/path/to/your.sf2 npm run render:fluidsynth
+```
+
+`score.mid` 由 `npm run rebuild:music` 生成，可直接导入 DAW 或 MuseScore 编辑、出谱。
 
 ### 命令行渲染 Strudel（需要 Node.js 22+）
 
@@ -163,7 +179,7 @@ csound --smacro:DURATION=8 -o canon_csound.wav main.csd
 
 产物以 GitHub Actions Artifact 形式提供，保留 14 天。
 
-推送 `<proj>-<version>` 标签发布时，三个工作流还会把各自的产物自动上传到
+推送 `<proj>-<version>` 标签发布时，四个工作流还会把各自的产物自动上传到
 **GitHub Release**（若 Release 不存在则自动创建，并生成发布说明），例如
 `canon-1.0.0` 的 Release 包含：
 

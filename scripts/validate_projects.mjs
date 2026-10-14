@@ -36,6 +36,6 @@ for (const projectName of projectNames) {
   if (config.smokeDurationSeconds > config.renderDurationSeconds) {
     throw new Error(`${projectName}: smoke duration exceeds render duration`);
   }
-  await Promise.all(['strudel.html', 'main.scd', 'export_wav.scd', 'main.csd'].map((file) => access(path.join(projectDir, file))));
+  await Promise.all(['strudel.html', 'main.scd', 'export_wav.scd', 'main.csd', 'score.mid'].map((file) => access(path.join(projectDir, file))));
   console.log(`Validated ${projectName} (${config.renderDurationSeconds}s)`);
 }
