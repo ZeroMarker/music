@@ -1,7 +1,8 @@
 # canon
 
-Current release: [canon-1.2.0](https://github.com/ZeroMarker/music/releases/tag/canon-1.2.0).
-Includes SuperCollider and Csound WAV/MP3 plus Strudel MP3.
+Current release: [canon-1.3.0](https://github.com/ZeroMarker/music/releases/tag/canon-1.3.0).
+Includes SuperCollider, Csound and MIDI + FluidSynth WAV/MP3 plus Strudel MP3.
+`1.3.0` adds the FluidSynth sample-based render and refines phrase dynamics.
 
 ## Strudel (browser)
 
