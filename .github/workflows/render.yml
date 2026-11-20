@@ -21,7 +21,7 @@ concurrency:
 jobs:
   render:
     name: Export WAV and MP3
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
       QT_QPA_PLATFORM: offscreen
@@ -76,12 +76,12 @@ jobs:
           Server.default.options.numInputBusChannels = 0;
           Server.default.options.numOutputBusChannels = 2;
           EOF
-          df -h /dev/shm
+          command -v jack_lsp
           jackd --no-realtime --name "$JACK_DEFAULT_SERVER" --port-max 64 -d dummy -r 48000 -p 1024 > jackd.log 2>&1 &
           echo "$!" > jackd.pid
           for attempt in {1..10}; do
-            if jack_lsp >/dev/null 2>&1; then
-              jack_lsp
+            if jack_lsp > jack-ports.log 2>&1; then
+              cat jack-ports.log
               exit 0
             fi
             if ! kill -0 "$(cat jackd.pid)" 2>/dev/null; then
@@ -89,7 +89,7 @@ jobs:
             fi
             sleep 1
           done
-          cat jackd.log
+          cat jackd.log jack-ports.log
           exit 1
 
       - name: Render WAV
