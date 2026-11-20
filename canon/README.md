@@ -111,6 +111,13 @@ Each part plays in its own thread. Press **Stop** to interrupt the performance
 or **Record** to capture it. The score section is rebuilt from the shared
 arrangement. [Sonic Pi tutorial](https://sonic-pi.net/tutorial.html)
 
+For older Sonic Pi builds whose editor has trouble sending large buffers, run
+the file from a blank buffer using its absolute path.
+
+```ruby
+run_file "/absolute/path/to/music/canon/sonic_pi.rb"
+```
+
 ## Python DSP and music21
 
 From the repository root, use Python 3.10 or newer.
