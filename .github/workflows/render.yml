@@ -21,7 +21,7 @@ concurrency:
 jobs:
   render:
     name: Export WAV and MP3
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       QT_QPA_PLATFORM: offscreen
@@ -66,7 +66,8 @@ jobs:
       - name: Install SuperCollider and ffmpeg
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends supercollider-language supercollider-server ffmpeg alsa-utils
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            supercollider-language supercollider-server jack-example-tools ffmpeg alsa-utils
 
       - name: Configure headless audio
         run: |
