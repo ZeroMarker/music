@@ -76,12 +76,16 @@ jobs:
           Server.default.options.numInputBusChannels = 0;
           Server.default.options.numOutputBusChannels = 2;
           EOF
-          jackd --no-realtime --name "$JACK_DEFAULT_SERVER" -d dummy -r 48000 -p 1024 > jackd.log 2>&1 &
+          df -h /dev/shm
+          jackd --no-realtime --name "$JACK_DEFAULT_SERVER" --port-max 64 -d dummy -r 48000 -p 1024 > jackd.log 2>&1 &
           echo "$!" > jackd.pid
           for attempt in {1..10}; do
             if jack_lsp >/dev/null 2>&1; then
               jack_lsp
               exit 0
+            fi
+            if ! kill -0 "$(cat jackd.pid)" 2>/dev/null; then
+              break
             fi
             sleep 1
           done

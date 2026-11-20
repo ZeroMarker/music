@@ -61,7 +61,8 @@ def record(duration, output, work, gui):
 
     jack_log, sonic_log = work / 'jack.log', work / 'sonic-pi.log'
     with jack_log.open('w') as log:
-        jack = subprocess.Popen(['jackd', '-r', '-n', env['JACK_DEFAULT_SERVER'], '-d', 'dummy', '-r', '44100', '-p', '1024'],
+        jack = subprocess.Popen(['jackd', '-r', '-n', env['JACK_DEFAULT_SERVER'], '--port-max', '64',
+                                 '-d', 'dummy', '-r', '44100', '-p', '1024'],
                                 env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
     try:
         wait_for_log(jack, jack_log, 'starting in non-realtime mode', 10)
