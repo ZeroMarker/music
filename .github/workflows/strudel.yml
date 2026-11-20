@@ -101,5 +101,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --generate-notes
+          gh release view "$TAG" >/dev/null 2>&1 ||
+            gh release create "$TAG" --verify-tag --generate-notes ||
+            gh release view "$TAG" >/dev/null
           gh release upload "$TAG" "${{ env.PROJ }}"/${{ env.PROJ }}_strudel.mp3 --clobber

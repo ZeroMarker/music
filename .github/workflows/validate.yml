@@ -86,7 +86,7 @@ jobs:
           bash scripts/check_audio.sh "${{ runner.temp }}/${{ matrix.project }}-smoke.wav"
 
   canon-alternatives:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -99,10 +99,10 @@ jobs:
           python-version: "3.12"
       - run: npm ci
       - run: python -m pip install -r canon/requirements.txt
-      - name: Install FFmpeg and Ruby
+      - name: Install Sonic Pi server and FFmpeg
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ffmpeg ruby
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sonic-pi-server ffmpeg
       - name: Render Canon alternatives and check output
         run: |
           duration=$(jq -er '.smokeDurationSeconds' canon/project.json)
@@ -112,7 +112,8 @@ jobs:
           bash scripts/check_audio.sh "$RUNNER_TEMP/python.wav"
           python canon/export_music21.py --output "$RUNNER_TEMP/canon.musicxml"
           test -s "$RUNNER_TEMP/canon.musicxml"
-          ruby -c canon/sonic_pi.rb
+          python scripts/render_sonic_pi.py --duration "$duration" --output "$RUNNER_TEMP/sonic-pi.wav"
+          bash scripts/check_audio.sh "$RUNNER_TEMP/sonic-pi.wav"
       - name: Reject a silent WAV
         run: |
           ffmpeg -v error -f lavfi -i anullsrc=r=44100:cl=stereo -t 0.25 "$RUNNER_TEMP/silent.wav"

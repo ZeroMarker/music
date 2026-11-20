@@ -40,6 +40,7 @@ music21 乐谱导出，见[卡农使用说明](canon/README.md)。
 ├── scripts/
 │   ├── render_strudel.mjs        # 共享 Puppeteer 无头录制脚本（WebM）
 │   ├── render_tone.mjs           # 卡农 Tone.js 离线渲染（WAV）
+│   ├── render_sonic_pi.py        # 卡农 Sonic Pi 无头录制（WAV）
 │   ├── check_audio.sh           # 校验音频峰值并拦截静音
 │   ├── render_csound.sh          # 共享 Csound 命令行渲染脚本（WAV）
 │   ├── render_fluidsynth.sh      # 共享 FluidSynth 命令行渲染脚本（WAV）
@@ -51,13 +52,14 @@ music21 乐谱导出，见[卡农使用说明](canon/README.md)。
 │   ├── render.yml                # CI：SuperCollider → WAV + MP3（按标签解析项目）
 │   ├── csound.yml                # CI：Csound → WAV + MP3（按标签解析项目）
 │   ├── fluidsynth.yml            # CI：MIDI + FluidSynth → WAV + MP3（按标签解析项目）
+│   ├── canon-alternatives.yml    # CI：卡农新增音频与乐谱发布
 │   └── validate.yml              # CI：共享引擎与卡农新增方案的冒烟测试
 └── package.json                  # npm 脚本（Puppeteer 录制）
 ```
 
 ## 共享乐谱与编排
 
-两首作品已重新编排，版本分别为卡农 `1.3.0` 和《化蝶清梦》`1.2.0`。
+当前发布版本为卡农 `1.4.0` 和《化蝶清梦》`1.2.0`。
 卡农采用逐层进入、中段减奏和 D 大调终止式；《化蝶清梦》采用洞箫与二胡
 交替领奏、长短句和主音收尾。四套引擎从同一份有限乐谱生成，速度分别为
 84 BPM 和 72 BPM，渲染时长包含自然尾音。各引擎的 BPM 和默认渲染时长从各曲目的 `project.json` 同步。
@@ -193,23 +195,18 @@ csound --smacro:DURATION=8 -o canon_csound.wav main.csd
 | `csound.yml` | `<proj>_csound.wav` + `<proj>_csound.mp3`（Csound 版） |
 | `strudel.yml` | `<proj>_strudel.mp3`（Strudel 网页版） |
 | `fluidsynth.yml` | `<proj>_fluidsynth.wav` + `<proj>_fluidsynth.mp3`（FluidSynth 版） |
+| `canon-alternatives.yml` | 卡农 Tone.js、Python DSP、Sonic Pi 的 WAV 和 MP3，以及 MIDI、MusicXML 和 Sonic Pi 源码 |
 
-产物以 GitHub Actions Artifact 形式提供，保留 14 天。
+卡农专用工作流监听 `canon-<version>` 标签，也可手动运行。所有渲染工作流的 GitHub Actions Artifact 保留 14 天。
 
-推送 `<proj>-<version>` 标签发布时，四个工作流还会把各自的产物自动上传到
-**GitHub Release**（若 Release 不存在则自动创建，并生成发布说明），例如
-`canon-1.3.0` 的 Release 包含以下文件。
-
-- `canon.wav` / `canon.mp3` — SuperCollider 母版
-- `canon_csound.wav` / `canon_csound.mp3` — Csound 版
-- `canon_strudel.mp3` — Strudel 网页版
-- `canon_fluidsynth.wav` / `canon_fluidsynth.mp3` — FluidSynth 版
+推送版本标签时，对应工作流把各自的产物上传到 GitHub Release。常规 CI 会验证
+卡农的 Tone.js、Python DSP 和 Sonic Pi 短渲染，以及 music21 的乐谱导出。
 
 ## 已发布作品
 
 | 作品 | 版本 | 音频 |
 | --- | --- | --- |
-| D 大调卡农（Canon in D） | [`canon-1.3.0`](https://github.com/ZeroMarker/music/releases/tag/canon-1.3.0) | [WAV 母版](https://github.com/ZeroMarker/music/releases/download/canon-1.3.0/canon.wav) · [SuperCollider MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.3.0/canon.mp3) · [Csound MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.3.0/canon_csound.mp3) · [FluidSynth MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.3.0/canon_fluidsynth.mp3) · [Strudel MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.3.0/canon_strudel.mp3) |
+| D 大调卡农（Canon in D） | [`canon-1.4.0`](https://github.com/ZeroMarker/music/releases/tag/canon-1.4.0) | [WAV 母版](https://github.com/ZeroMarker/music/releases/download/canon-1.4.0/canon.wav) · [SuperCollider MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.4.0/canon.mp3) · [Csound MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.4.0/canon_csound.mp3) · [FluidSynth MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.4.0/canon_fluidsynth.mp3) · [Strudel MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.4.0/canon_strudel.mp3) · [Tone.js MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.4.0/canon_tone.mp3) · [Python MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.4.0/canon_python.mp3) · [Sonic Pi MP3](https://github.com/ZeroMarker/music/releases/download/canon-1.4.0/canon_sonic_pi.mp3) · [MIDI](https://github.com/ZeroMarker/music/releases/download/canon-1.4.0/canon.mid) · [MusicXML](https://github.com/ZeroMarker/music/releases/download/canon-1.4.0/canon.musicxml) |
 | 化蝶清梦（Butterfly Lovers · Reverie） | [`liangzhu-1.2.0`](https://github.com/ZeroMarker/music/releases/tag/liangzhu-1.2.0) | [WAV 母版](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.2.0/liangzhu.wav) · [SuperCollider MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.2.0/liangzhu.mp3) · [Strudel MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.2.0/liangzhu_strudel.mp3) · [Csound MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.2.0/liangzhu_csound.mp3) · [FluidSynth MP3](https://github.com/ZeroMarker/music/releases/download/liangzhu-1.2.0/liangzhu_fluidsynth.mp3) |
 
 卡农 `1.1.0` 修正了 Strudel 版的半速问题（此前实为 42 BPM，现与 project.json

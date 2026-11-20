@@ -1,8 +1,9 @@
 # canon
 
-Current release: [canon-1.3.0](https://github.com/ZeroMarker/music/releases/tag/canon-1.3.0).
-Includes SuperCollider, Csound and MIDI + FluidSynth WAV/MP3 plus Strudel MP3.
-`1.3.0` adds the FluidSynth sample-based render and refines phrase dynamics.
+The latest release is [canon-1.4.0](https://github.com/ZeroMarker/music/releases/tag/canon-1.4.0).
+It adds Tone.js, Python DSP and Sonic Pi WAV/MP3, plus downloadable MIDI,
+MusicXML and Sonic Pi source. SuperCollider, Csound, FluidSynth and Strudel
+are also included.
 
 ## Strudel (browser)
 
@@ -118,6 +119,13 @@ the file from a blank buffer using its absolute path.
 run_file "/absolute/path/to/music/canon/sonic_pi.rb"
 ```
 
+On Ubuntu 24.04 with `sonic-pi-server` and FFmpeg installed, the release runner
+records headlessly with JACK. Run from the repository root.
+
+```bash
+python3 scripts/render_sonic_pi.py
+```
+
 ## Python DSP and music21
 
 From the repository root, use Python 3.10 or newer.
@@ -147,8 +155,10 @@ The four release render workflows resolve the project name from the pushed tag
 run manually. Project names may only contain letters, digits and underscores;
 versions must be plain dotted numbers (no `-beta` suffixes). Artifacts and
 release assets are prefixed with the project name, so multiple projects can be
-published from the same repository. The validation workflow also renders short
-Tone.js and Python samples, exports MusicXML, and syntax-checks the Sonic Pi file.
+published from the same repository. [Release Canon alternatives](../.github/workflows/canon-alternatives.yml)
+adds the full Tone.js, Python DSP and Sonic Pi recordings and the three score
+assets to `canon-<version>` releases. The validation workflow runs short renders
+using all three new audio engines and checks MusicXML export.
 
 ### SuperCollider Render
 
