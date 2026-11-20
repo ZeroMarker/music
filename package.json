@@ -3,14 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check scripts/render_strudel.mjs && node scripts/check_strudel_pattern.mjs && node scripts/validate_projects.mjs",
+    "check": "node --check scripts/render_strudel.mjs && node --check scripts/render_tone.mjs && node scripts/check_strudel_pattern.mjs && node scripts/rebuild_scores.mjs --check && node scripts/validate_projects.mjs",
     "render:strudel": "node scripts/render_strudel.mjs",
     "render:csound": "bash scripts/render_csound.sh",
     "rebuild:music": "node scripts/rebuild_scores.mjs",
-    "render:fluidsynth": "bash scripts/render_fluidsynth.sh"
+    "render:fluidsynth": "bash scripts/render_fluidsynth.sh",
+    "render:tone": "node scripts/render_tone.mjs"
   },
   "devDependencies": {
     "@strudel/web": "1.0.3",
-    "puppeteer": "25.4.0"
+    "puppeteer": "25.18.1",
+    "tone": "15.1.22"
   }
 }

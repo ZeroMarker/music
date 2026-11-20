@@ -74,12 +74,7 @@ jobs:
         run: |
           ffmpeg -y -i ${{ env.PROJ }}_csound.wav -codec:a libmp3lame -q:a 2 ${{ env.PROJ }}_csound.mp3
           test -s ${{ env.PROJ }}_csound.mp3
-          ffmpeg -i ${{ env.PROJ }}_csound.wav -af volumedetect -f null - 2> volume.log
-          if grep -q "max_volume: -inf" volume.log; then
-            echo "error: rendered audio appears to be silent" >&2
-            cat volume.log
-            exit 1
-          fi
+          bash "$GITHUB_WORKSPACE/scripts/check_audio.sh" "${{ env.PROJ }}_csound.wav"
         working-directory: ${{ github.workspace }}/${{ env.PROJ }}
 
       - name: Show audio metadata

@@ -11,15 +11,16 @@ click **Play**. The browser arrangement uses piano, violin, viola, and cello
 through Strudel's built-in triangle and sawtooth synthesizers on the Web Audio
 engine.
 
-The arrangement is generated from `../scripts/rebuild_scores.mjs` for all three
-engines at 84 BPM. Piano and cello establish the ground, piano arpeggios join
+The arrangement comes from the [shared score generator](../scripts/rebuild_scores.mjs)
+at 84 BPM. Piano and cello establish the ground, piano arpeggios join
 after 16 beats, then the melody and viola enter after 32 beats. A quieter middle
 section leads to the return, and a final D major chord begins at 125.71 s.
 The score ends at 128.57 s; the remaining render time preserves release tails.
 
-Run `npm run rebuild:music` from the repository root after editing the shared
-score. `npm run check` evaluates the entire browser score and verifies that it
-stops producing notes after the configured render duration.
+Set `tempoBpm` and `renderDurationSeconds` in [project.json](project.json), then
+run `npm run rebuild:music` from the repository root. Allow enough time for all
+180 beats plus release tails. `npm run check` checks the full Strudel pattern and
+reports generated arrangements that are out of date.
 
 ## SuperCollider
 
@@ -62,9 +63,9 @@ Csound arrangement of Canon in D for:
 - viola
 - cello
 
-`main.csd` is a single self-contained file: note tables (MIDI) + a scheduler
-instrument that schedules every event, plus the instrument definitions and a
-master reverb bus. To render a WAV (csound must be on PATH):
+`main.csd` contains the generated scheduler, instrument definitions, and master
+reverb bus. To render a WAV with Csound installed, run the following from the
+repository root.
 
 ```bash
 cd canon
@@ -87,14 +88,60 @@ MUSIC_PROJECT_DIR=canon MUSIC_RECORD_DURATION=5 MUSIC_RECORD_PATH=/tmp/canon_tes
   bash scripts/render_csound.sh
 ```
 
+## Tone.js
+
+Use Node.js 22.12 or newer. From the repository root, install dependencies
+with `npm ci`, then render the WAV.
+
+```bash
+npm run render:tone
+```
+
+Tone.js uses Chromium's offline Web Audio context to schedule the shared
+[score.json](score.json), apply per-part filters and panning, and write
+`canon/canon_tone.wav` at 44.1 kHz stereo. Set `MUSIC_RECORD_PATH` to change the
+output location and `MUSIC_RECORD_DURATION` for a shorter render. If Puppeteer
+requires a local browser, set `PUPPETEER_EXECUTABLE_PATH` to Chrome or Chromium.
+[Tone.js offline implementation](https://github.com/Tonejs/Tone.js/blob/dev/Tone/core/context/Offline.ts)
+
+## Sonic Pi
+
+Open [sonic_pi.rb](sonic_pi.rb) in the Sonic Pi desktop editor and press **Run**.
+Each part plays in its own thread. Press **Stop** to interrupt the performance
+or **Record** to capture it. The score section is rebuilt from the shared
+arrangement. [Sonic Pi tutorial](https://sonic-pi.net/tutorial.html)
+
+## Python DSP and music21
+
+From the repository root, use Python 3.10 or newer.
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r canon/requirements.txt
+.venv/bin/python canon/render_python.py
+.venv/bin/python canon/export_music21.py
+```
+
+The Python renderer uses additive synthesis, distinct piano and string envelopes,
+stereo panning and short delay taps. The default output is
+`canon/canon_python.wav` at 44.1 kHz stereo. Use `--duration` to render an excerpt
+and `--output` to change the path. With FFmpeg installed, encode either WAV to
+MP3 using `ffmpeg -i input.wav -c:a libmp3lame -q:a 2 output.mp3`.
+
+The music21 exporter quantizes the shared `score.mid` to a sixteenth-note grid
+for readable notation and writes five parts to `canon/canon.musicxml`. Open the
+MusicXML in a notation editor. Use [score.mid](score.mid) for the original
+performance timing. [music21 MIDI documentation](https://music21.org/music21docs/moduleReference/moduleMidiTranslate.html)
+
 ## GitHub Actions
 
-All workflows resolve the project name from the pushed tag
+The four release render workflows resolve the project name from the pushed tag
 (`<project>-<version>`, e.g. `canon-1.0.0`) or from the `project` input when
 run manually. Project names may only contain letters, digits and underscores;
 versions must be plain dotted numbers (no `-beta` suffixes). Artifacts and
 release assets are prefixed with the project name, so multiple projects can be
-published from the same repository.
+published from the same repository. The validation workflow also renders short
+Tone.js and Python samples, exports MusicXML, and syntax-checks the Sonic Pi file.
 
 ### SuperCollider Render
 

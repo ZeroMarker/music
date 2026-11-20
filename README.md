@@ -1,7 +1,8 @@
 # music — Code to Music
 
-用代码生成音乐的项目。每首作品通过四套技术方案实现，并可在 GitHub Actions
-上自动渲染音频产物。
+用代码生成音乐的项目。两首已发布作品共用四套渲染方案，并可在 GitHub Actions
+上自动生成音频产物。《D 大调卡农》另有 Tone.js、Sonic Pi、Python DSP 和
+music21 乐谱导出，见[卡农使用说明](canon/README.md)。
 
 - **Strudel**：浏览器端音乐编程环境（Web Audio），适合网页播放与快速原型。
 - **SuperCollider**：原生音频平台，适合高质量合成、复杂配器和 WAV 母版。
@@ -20,7 +21,12 @@
 │   ├── main.scd                  # SuperCollider 编排（SynthDef + Pattern）
 │   ├── export_wav.scd            # SuperCollider 命令行 WAV 导出入口
 │   ├── main.csd                  # Csound 编排（orchestra + 调度器 + score）
-│   ├── score.mid                 # 标准 MIDI 乐谱（FluidSynth 渲染，也可导入 DAW / MuseScore）
+│   ├── score.mid                 # 标准 MIDI 乐谱（供 FluidSynth 与 DAW 使用）
+│   ├── score.json                # Tone.js / Python 共用的乐谱事件
+│   ├── sonic_pi.rb               # Sonic Pi 实时演奏
+│   ├── render_python.py          # NumPy 离线合成 WAV
+│   ├── export_music21.py         # 从 MIDI 导出 MusicXML
+│   ├── requirements.txt          # 卡农 Python 工具依赖
 │   ├── project.json              # 项目名称、速度和渲染时长
 │   └── README.md                 # canon 使用说明
 ├── liangzhu/                     # 《化蝶清梦》原创五声音阶项目
@@ -33,6 +39,8 @@
 │   └── README.md                 # liangzhu 使用说明
 ├── scripts/
 │   ├── render_strudel.mjs        # 共享 Puppeteer 无头录制脚本（WebM）
+│   ├── render_tone.mjs           # 卡农 Tone.js 离线渲染（WAV）
+│   ├── check_audio.sh           # 校验音频峰值并拦截静音
 │   ├── render_csound.sh          # 共享 Csound 命令行渲染脚本（WAV）
 │   ├── render_fluidsynth.sh      # 共享 FluidSynth 命令行渲染脚本（WAV）
 │   ├── rebuild_scores.mjs        # 共享有限乐谱，生成四套引擎的乐谱
@@ -43,7 +51,7 @@
 │   ├── render.yml                # CI：SuperCollider → WAV + MP3（按标签解析项目）
 │   ├── csound.yml                # CI：Csound → WAV + MP3（按标签解析项目）
 │   ├── fluidsynth.yml            # CI：MIDI + FluidSynth → WAV + MP3（按标签解析项目）
-│   └── validate.yml              # CI：全部项目的短时 Strudel/Csound/FluidSynth 冒烟测试
+│   └── validate.yml              # CI：共享引擎与卡农新增方案的冒烟测试
 └── package.json                  # npm 脚本（Puppeteer 录制）
 ```
 
@@ -52,11 +60,11 @@
 两首作品已重新编排，版本分别为卡农 `1.3.0` 和《化蝶清梦》`1.2.0`。
 卡农采用逐层进入、中段减奏和 D 大调终止式；《化蝶清梦》采用洞箫与二胡
 交替领奏、长短句和主音收尾。四套引擎从同一份有限乐谱生成，速度分别为
-84 BPM 和 72 BPM，渲染时长包含自然尾音。
+84 BPM 和 72 BPM，渲染时长包含自然尾音。各引擎的 BPM 和默认渲染时长从各曲目的 `project.json` 同步。
 
 ```bash
-npm run rebuild:music           # 从 scripts/rebuild_scores.mjs 生成四套乐谱（含 score.mid）
-npm run check                   # 检查项目文件、Strudel 乐谱与结束后的音符事件
+npm run rebuild:music           # 从共享乐谱与项目配置生成各引擎的编排
+npm run check                   # 检查项目文件、Strudel Pattern 和生成文件是否过期
 ```
 
 ## 添加新项目
@@ -117,7 +125,7 @@ MUSIC_PROJECT_DIR=liangzhu MUSIC_SOUNDFONT=/path/to/your.sf2 npm run render:flui
 
 `score.mid` 由 `npm run rebuild:music` 生成，可直接导入 DAW 或 MuseScore 编辑、出谱。
 
-### 命令行渲染 Strudel（需要 Node.js 22+）
+### 命令行渲染 Strudel（需要 Node.js 22.12+）
 
 ```bash
 npm ci

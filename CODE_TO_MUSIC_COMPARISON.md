@@ -177,19 +177,30 @@ rebuild_scores.mjs → score.mid
     → GitHub Actions Artifact
 ```
 
+## 卡农新增方案
+
+| 方案 | 入口 | 产物 |
+| --- | --- | --- |
+| Tone.js | `npm run render:tone` | Chromium 非实时生成的 44.1 kHz 立体声 WAV |
+| Sonic Pi | 打开 `canon/sonic_pi.rb` | 五声部实时演奏，可在应用内录音 |
+| Python DSP | `python canon/render_python.py` | NumPy 加法合成的 44.1 kHz 立体声 WAV |
+| music21 | `python canon/export_music21.py` | 从共享 MIDI 量化导出的 MusicXML |
+
+Tone.js 与 Python 从同一份 `canon/score.json` 调度音符，Sonic Pi 的播放器内嵌由共享乐谱生成的事件，music21 则读取同源 MIDI。运行方式和依赖见 [卡农使用说明](canon/README.md)。
+
 ## 其他候选技术
 
 以下技术可用于扩展现有编曲、合成或交互能力。
 
 | 技术 | 类型 | 运行环境 | 离线渲染 | 优势 | 局限 | 适合场景 |
 | --- | --- | --- | --- | --- | --- | --- |
-| Tone.js | JS 音频框架 | Web Audio | `Tone.Offline` 离线渲染 | 提供乐器、效果器和 Transport 调度 | 迁移时需重写 Pattern 或增加事件适配层 | 浏览器合成、交互播放和导出 |
-| Sonic Pi | Ruby 风格的音乐 DSL | 桌面与 Web | 常用工作流为播放与录制 | 适合边演奏边修改代码 | 批量交付需另行设计渲染流程 | 教学、Live Coding 演出 |
+| Tone.js（卡农已实现） | JS 音频框架 | Web Audio | `Tone.Offline` 离线渲染 | 提供乐器、效果器和 Transport 调度 | 迁移时需重写 Pattern 或增加事件适配层 | 浏览器合成、交互播放和导出 |
+| Sonic Pi（卡农已实现） | Ruby 风格的音乐 DSL | 桌面与 Web | 常用工作流为播放与录制 | 适合边演奏边修改代码 | 批量交付需另行设计渲染流程 | 教学、Live Coding 演出 |
 | TidalCycles | Haskell Pattern DSL（底层 SuperDirt） | GHC + SuperCollider | 仅实时录制 | 用 Pattern 表达节奏与变奏，Strudel 继承了其模式语言 | 安装链长，依赖 Haskell 与 SC | 节奏型 Live Coding |
 | ChucK | 强时序音频语言 | 命令行 / WebChucK | `--silent` 可非实时写 WAV | 采样级精确定时，语法类 C | 社区较小，音色库有限 | 精确时序、算法作曲 |
 | Faust | 函数式 DSP 语言 | 编译为 C++/WASM/插件 | 依赖宿主 | 生成高效 DSP，可导出 VST/WebAudio | 只负责音色与效果，不负责编曲 | 自定义合成器、跨平台音色 |
 | Pure Data / Max | 可视化数据流 | 桌面应用（Pd 可 `-nogui -batch`） | Pd batch 模式可离线 | 可视化补丁，交互装置成熟 | 补丁难以 diff 和代码审查 | 装置艺术、实时交互 |
-| music21 / LilyPond | 乐理工具与乐谱排版 | Python / 命令行 | 导出 MIDI 或排版乐谱 | 和弦分析、音符与乐谱对象 | 音频交给独立合成器渲染 | 算法编曲、乐理校验、五线谱 |
+| music21（卡农已实现）/ LilyPond | 乐理工具与乐谱排版 | Python / 命令行 | 导出 MIDI 或排版乐谱 | 和弦分析、音符与乐谱对象 | 音频交给独立合成器渲染 | 算法编曲、乐理校验、五线谱 |
 
 项目文档提供入门示例和 API 说明。 [Strudel](https://strudel.cc/workshop/getting-started/) · [SuperCollider](https://supercollider.github.io/) · [Csound](https://csound.com/) · [FluidSynth](https://www.fluidsynth.org/) · [Tone.js](https://tonejs.github.io/) · [Sonic Pi](https://sonic-pi.net/) · [music21](https://music21.org/music21docs/)
 

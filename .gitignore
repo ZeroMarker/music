@@ -13,3 +13,8 @@ jackd.pid
 # Editors / tooling
 .claude/
 .DS_Store
+
+# Python environments and local notation output
+.venv/
+__pycache__/
+/canon/canon.musicxml

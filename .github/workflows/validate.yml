@@ -37,12 +37,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends ffmpeg
       - name: Reject missing or silent audio
         run: |
-          test -s "${{ runner.temp }}/${{ matrix.project }}-smoke.webm"
-          ffmpeg -i "${{ runner.temp }}/${{ matrix.project }}-smoke.webm" -af volumedetect -f null - 2> volume.log
-          if grep -q "max_volume: -inf" volume.log; then
-            cat volume.log
-            exit 1
-          fi
+          bash scripts/check_audio.sh "${{ runner.temp }}/${{ matrix.project }}-smoke.webm"
 
   csound-smoke:
     runs-on: ubuntu-latest
@@ -65,12 +60,7 @@ jobs:
         run: bash scripts/render_csound.sh
       - name: Reject missing or silent audio
         run: |
-          test -s "${{ runner.temp }}/${{ matrix.project }}-smoke.wav"
-          ffmpeg -i "${{ runner.temp }}/${{ matrix.project }}-smoke.wav" -af volumedetect -f null - 2> volume.log
-          if grep -q "max_volume: -inf" volume.log; then
-            cat volume.log
-            exit 1
-          fi
+          bash scripts/check_audio.sh "${{ runner.temp }}/${{ matrix.project }}-smoke.wav"
 
   fluidsynth-smoke:
     runs-on: ubuntu-latest
@@ -93,9 +83,40 @@ jobs:
         run: bash scripts/render_fluidsynth.sh
       - name: Reject missing or silent audio
         run: |
-          test -s "${{ runner.temp }}/${{ matrix.project }}-smoke.wav"
-          ffmpeg -i "${{ runner.temp }}/${{ matrix.project }}-smoke.wav" -af volumedetect -f null - 2> volume.log
-          if grep -q "max_volume: -inf" volume.log; then
-            cat volume.log
+          bash scripts/check_audio.sh "${{ runner.temp }}/${{ matrix.project }}-smoke.wav"
+
+  canon-alternatives:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: python -m pip install -r canon/requirements.txt
+      - name: Install FFmpeg and Ruby
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg ruby
+      - name: Render Canon alternatives and check output
+        run: |
+          duration=$(jq -er '.smokeDurationSeconds' canon/project.json)
+          MUSIC_RECORD_DURATION="$duration" MUSIC_RECORD_PATH="$RUNNER_TEMP/tone.wav" npm run render:tone
+          python canon/render_python.py --duration "$duration" --output "$RUNNER_TEMP/python.wav"
+          bash scripts/check_audio.sh "$RUNNER_TEMP/tone.wav"
+          bash scripts/check_audio.sh "$RUNNER_TEMP/python.wav"
+          python canon/export_music21.py --output "$RUNNER_TEMP/canon.musicxml"
+          test -s "$RUNNER_TEMP/canon.musicxml"
+          ruby -c canon/sonic_pi.rb
+      - name: Reject a silent WAV
+        run: |
+          ffmpeg -v error -f lavfi -i anullsrc=r=44100:cl=stereo -t 0.25 "$RUNNER_TEMP/silent.wav"
+          if bash scripts/check_audio.sh "$RUNNER_TEMP/silent.wav"; then
+            echo "error: silent WAV passed audio validation" >&2
             exit 1
           fi
