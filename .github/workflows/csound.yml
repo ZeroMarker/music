@@ -103,6 +103,6 @@ jobs:
             gh release create "$TAG" --verify-tag --generate-notes ||
             gh release view "$TAG" >/dev/null
           stem="$RUNNER_TEMP/$TAG-csound"
-          cp "$PROJ/$PROJ_csound.wav" "$stem.wav"
-          cp "$PROJ/$PROJ_csound.mp3" "$stem.mp3"
+          cp "$PROJ/${PROJ}_csound.wav" "$stem.wav"
+          cp "$PROJ/${PROJ}_csound.mp3" "$stem.mp3"
           gh release upload "$TAG" "$stem.wav" "$stem.mp3" --clobber

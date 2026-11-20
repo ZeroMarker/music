@@ -103,6 +103,6 @@ jobs:
             gh release create "$TAG" --verify-tag --generate-notes ||
             gh release view "$TAG" >/dev/null
           stem="$RUNNER_TEMP/$TAG-fluidsynth"
-          cp "$PROJ/$PROJ_fluidsynth.wav" "$stem.wav"
-          cp "$PROJ/$PROJ_fluidsynth.mp3" "$stem.mp3"
+          cp "$PROJ/${PROJ}_fluidsynth.wav" "$stem.wav"
+          cp "$PROJ/${PROJ}_fluidsynth.mp3" "$stem.mp3"
           gh release upload "$TAG" "$stem.wav" "$stem.mp3" --clobber
