@@ -25,6 +25,7 @@ jobs:
     timeout-minutes: 15
     env:
       QT_QPA_PLATFORM: offscreen
+      JACK_DEFAULT_SERVER: music-ci-${{ github.run_id }}
       JACK_NO_AUDIO_RESERVATION: "1"
 
     steps:
@@ -34,9 +35,11 @@ jobs:
           persist-credentials: false
 
       - name: Resolve project name
+        env:
+          PROJECT_INPUT: ${{ inputs.project }}
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            PROJ="${{ inputs.project }}"
+            PROJ="$PROJECT_INPUT"
           else
             TAG="${GITHUB_REF#refs/tags/}"
             PROJ="${TAG%-*}"
@@ -73,7 +76,7 @@ jobs:
           Server.default.options.numInputBusChannels = 0;
           Server.default.options.numOutputBusChannels = 2;
           EOF
-          jackd -d dummy -r 48000 -p 1024 > jackd.log 2>&1 &
+          jackd --no-realtime --name "$JACK_DEFAULT_SERVER" -d dummy -r 48000 -p 1024 > jackd.log 2>&1 &
           echo "$!" > jackd.pid
           for attempt in {1..10}; do
             if jack_lsp >/dev/null 2>&1; then
