@@ -5,6 +5,30 @@ It adds Tone.js, Python DSP and Sonic Pi WAV/MP3, plus downloadable MIDI,
 MusicXML and Sonic Pi source. SuperCollider, Csound, FluidSynth and Strudel
 are also included.
 
+## Recorded instruments
+
+For an acoustic rendition, render the shared score with recordings of an
+upright piano, a cello and viola section, and a solo violin. The bass line
+keeps its original pitches. Notes below the cello's standard low C use a
+recorded double bass.
+
+Install FFmpeg and the Python dependencies below, then run from the repository
+root.
+
+```bash
+.venv/bin/python canon/render_samples.py
+```
+
+The first run downloads the required WAVs from a pinned revision of VSCO 2
+Community Edition. Further renders reuse the local `canon/.sample-cache/`
+cache. `--sample-dir` changes the cache path, `--duration` renders an excerpt,
+and `--output` changes the default `canon/canon_samples.wav` destination. The
+renderer trims recording pre-roll, retunes nearby samples according to the
+score, and applies each part's dynamics, release and pan.
+
+Source recordings are CC0 1.0 from Versilian Studios. Simon Dalzell of Ivy
+Audio recorded the upright piano. [VSCO 2 Community Edition](https://versilian-studios.com/vsco-community/) · [Pinned source and license](https://github.com/sgossner/VSCO-2-CE/tree/440300901dfe9275fd84e0b7763af1f8443ae62e)
+
 ## Strudel (browser)
 
 Run `npm ci` in the repository root, then open `strudel.html` in a browser and

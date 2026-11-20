@@ -2,7 +2,7 @@
 
 用代码生成音乐的项目。两首已发布作品共用四套渲染方案，并可在 GitHub Actions
 上自动生成音频产物。《D 大调卡农》另有 Tone.js、Sonic Pi、Python DSP 和
-music21 乐谱导出，见[卡农使用说明](canon/README.md)。
+music21 乐谱导出。卡农也可用录制的钢琴和弦乐样本渲染，见[卡农使用说明](canon/README.md#recorded-instruments)。
 
 - **Strudel**：浏览器端音乐编程环境（Web Audio），适合网页播放与快速原型。
 - **SuperCollider**：原生音频平台，适合高质量合成、复杂配器和 WAV 母版。
@@ -25,6 +25,7 @@ music21 乐谱导出，见[卡农使用说明](canon/README.md)。
 │   ├── score.json                # Tone.js / Python 共用的乐谱事件
 │   ├── sonic_pi.rb               # Sonic Pi 实时演奏
 │   ├── render_python.py          # NumPy 离线合成 WAV
+│   ├── render_samples.py         # 用实录乐器样本渲染 WAV
 │   ├── export_music21.py         # 从 MIDI 导出 MusicXML
 │   ├── requirements.txt          # 卡农 Python 工具依赖
 │   ├── project.json              # 项目名称、速度和渲染时长
