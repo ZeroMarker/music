@@ -47,20 +47,25 @@ jobs:
         run: |
           out="$RUNNER_TEMP/canon-release"
           mkdir -p "$out"
-          MUSIC_RECORD_PATH="$out/canon_tone.wav" npm run render:tone
-          python canon/render_python.py --output "$out/canon_python.wav"
-          python scripts/render_sonic_pi.py --output "$out/canon_sonic_pi.wav"
-          for engine in tone python sonic_pi; do
-            wav="$out/canon_$engine.wav"
-            mp3="$out/canon_$engine.mp3"
+          stem="$out/canon"
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            stem="$out/$GITHUB_REF_NAME"
+          fi
+          MUSIC_RECORD_PATH="$stem-tonejs.wav" npm run render:tone
+          python canon/render_python.py --output "$stem-python-dsp.wav"
+          python scripts/render_sonic_pi.py --output "$stem-sonic-pi.wav"
+          python canon/render_samples.py --output "$stem-vsco2-samples.wav"
+          for engine in tonejs python-dsp sonic-pi vsco2-samples; do
+            wav="$stem-$engine.wav"
+            mp3="$stem-$engine.mp3"
             bash scripts/check_audio.sh "$wav"
             ffmpeg -v error -i "$wav" -c:a libmp3lame -q:a 2 "$mp3"
             bash scripts/check_audio.sh "$mp3"
           done
-          python canon/export_music21.py --output "$out/canon.musicxml"
-          test -s "$out/canon.musicxml"
-          cp canon/score.mid "$out/canon.mid"
-          cp canon/sonic_pi.rb "$out/canon_sonic_pi.rb"
+          python canon/export_music21.py --output "$stem-music21.musicxml"
+          test -s "$stem-music21.musicxml"
+          cp canon/score.mid "$stem-midi.mid"
+          cp canon/sonic_pi.rb "$stem-sonic-pi.rb"
       - name: Upload Canon assets
         uses: actions/upload-artifact@v4
         with:

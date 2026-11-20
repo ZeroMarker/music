@@ -1,9 +1,9 @@
 # canon
 
-The latest release is [canon-1.4.0](https://github.com/ZeroMarker/music/releases/tag/canon-1.4.0).
-It adds Tone.js, Python DSP and Sonic Pi WAV/MP3, plus downloadable MIDI,
-MusicXML and Sonic Pi source. SuperCollider, Csound, FluidSynth and Strudel
-are also included.
+The latest release is [canon-1.5.0](https://github.com/ZeroMarker/music/releases/tag/canon-1.5.0).
+Asset names include the piece, version, and technology. For example,
+`canon-1.5.0-vsco2-samples.mp3` is the recorded-instrument mix and
+`canon-1.5.0-supercollider.wav` is the SuperCollider master.
 
 ## Recorded instruments
 
@@ -180,7 +180,7 @@ run manually. Project names may only contain letters, digits and underscores;
 versions must be plain dotted numbers (no `-beta` suffixes). Artifacts and
 release assets are prefixed with the project name, so multiple projects can be
 published from the same repository. [Release Canon alternatives](../.github/workflows/canon-alternatives.yml)
-adds the full Tone.js, Python DSP and Sonic Pi recordings and the three score
+adds the full Tone.js, Python DSP, Sonic Pi, and VSCO 2 recordings and the three score
 assets to `canon-<version>` releases. The validation workflow runs short renders
 using all three new audio engines and checks MusicXML export.
 

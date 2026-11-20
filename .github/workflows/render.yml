@@ -139,4 +139,7 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 ||
             gh release create "$TAG" --verify-tag --generate-notes ||
             gh release view "$TAG" >/dev/null
-          gh release upload "$TAG" "${{ env.PROJ }}"/${{ env.PROJ }}.wav "${{ env.PROJ }}"/${{ env.PROJ }}.mp3 --clobber
+          stem="$RUNNER_TEMP/$TAG-supercollider"
+          cp "$PROJ/$PROJ.wav" "$stem.wav"
+          cp "$PROJ/$PROJ.mp3" "$stem.mp3"
+          gh release upload "$TAG" "$stem.wav" "$stem.mp3" --clobber

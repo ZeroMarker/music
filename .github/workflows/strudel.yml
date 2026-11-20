@@ -104,4 +104,6 @@ jobs:
           gh release view "$TAG" >/dev/null 2>&1 ||
             gh release create "$TAG" --verify-tag --generate-notes ||
             gh release view "$TAG" >/dev/null
-          gh release upload "$TAG" "${{ env.PROJ }}"/${{ env.PROJ }}_strudel.mp3 --clobber
+          stem="$RUNNER_TEMP/$TAG-strudel"
+          cp "$PROJ/$PROJ_strudel.mp3" "$stem.mp3"
+          gh release upload "$TAG" "$stem.mp3" --clobber
